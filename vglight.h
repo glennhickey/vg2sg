@@ -28,15 +28,6 @@ public:
     */
    void loadGraph(std::istream& inStream);
 
-protected:
-
-   /** Convert _graphs into _nodes/_edges/_paths */
-   void mergeGraphs();
-       
-
-   /** Graphs read direct from protobuf.  They are unmerged and we keep
-    * them around just for storage */
-   std::vector<vg::Graph> _graphs;
 
    struct NodePtrLess {
       bool operator()(const vg::Node* node1, const vg::Node* node2) const;
@@ -44,10 +35,24 @@ protected:
    struct EdgePtrLess {
       bool operator()(const vg::Edge* edge, const vg::Edge* edge2) const;
    };
+   typedef std::list<const vg::Mapping> MappingList;
    typedef std::set<const vg::Node*, NodePtrLess> NodeSet;
    typedef std::set<const vg::Edge*, EdgePtrLess> EdgeSet;
-   typedef std::list<const vg::Mapping> MappingList;
    typedef std::map<std::string, MappingList> PathMap;
+
+   const NodeSet& getNodeSet() const;
+   const PathMap& getPathMap() const;
+   const EdgeSet& getEdgeSet() const;
+   
+protected:
+
+   /** Convert _graphs into _nodes/_edges/_paths */
+   void mergeGraphs();
+       
+   /** Graphs read direct from protobuf.  They are unmerged and we keep
+    * them around just for storage */
+   std::vector<vg::Graph> _graphs;
+
 
    /** Split out graph compoments into sets to (hopefully) handle merging. 
     * these are what we access during conversion */
@@ -88,6 +93,21 @@ inline bool VGLight::EdgePtrLess::operator()(const vg::Edge* edge1,
     }
   }
   return false;
+}
+
+inline const VGLight::NodeSet& VGLight::getNodeSet() const
+{
+  return _nodes;
+}
+
+inline const VGLight::EdgeSet& VGLight::getEdgeSet() const
+{
+  return _edges;
+}
+
+inline const VGLight::PathMap& VGLight::getPathMap() const
+{
+  return _paths;
 }
 
 

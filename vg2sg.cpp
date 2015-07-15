@@ -11,6 +11,8 @@
 #include <fstream>
 #include <getopt.h>
 
+#include "vglight.h"
+
 using namespace std;
 
 void help(char** argv)
@@ -59,5 +61,20 @@ int main(int argc, char** argv)
   string vgPath = argv[1];
   string outFaPath = argv[2];
   string outSQLPath = argv[3];
+
+  ifstream vgStream(vgPath);
+  if (!vgStream)
+  {
+    throw runtime_error(string("Error opening " + vgPath));
+  }
+  
+  VGLight vglight;
+  vglight.loadGraph(vgStream);
+
+  // debugf
+  cout << "numNodes " << vglight.getNodeSet().size() << endl
+       << "numEdges " << vglight.getEdgeSet().size() << endl
+       << "numPaths " << vglight.getPathMap().size() << endl;
+  
   
 }
