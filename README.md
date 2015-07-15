@@ -13,8 +13,6 @@ This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mos
 
 ## Instructions
 
-**Dependencies:**    [VG](https://github.com/ekg/vg).  Expected to be in sister directory to vg2sg but can be changed in include.mk. 
-
 **Cloning:** Don't forget to clone submodules:
 
      git clone git@github.com:glennhickey/vg2sg.git --recursive

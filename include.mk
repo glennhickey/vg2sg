@@ -55,7 +55,7 @@ protobufPath=${rootPath}/protobuf
 
 cflags +=  -I ${sgExportPath}
 cppflags +=  -I ${sgExportPath} -I ${protobufPath}/build/include
-basicLibs = ${sgExportPath}/sgExport.a ${protobufPath}/libprotobuf.a
-basicLibsDependencies = ${basicLibs}
+basicLibs = ${sgExportPath}/sgExport.a ${protobufPath}/libprotobuf.a -lz
+basicLibsDependencies = ${sgExportPath}/sgExport.a ${protobufPath}/libprotobuf.a
 
 
