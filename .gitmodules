@@ -1,3 +1,6 @@
 [submodule "sgExport"]
 	path = sgExport
 	url = git@github.com:glennhickey/sgExport.git
+[submodule "protobuf"]
+	path = protobuf
+	url = https://github.com/ekg/protobuf

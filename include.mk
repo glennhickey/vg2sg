@@ -50,15 +50,12 @@ cflags = ${cflags_dbg}
 binPath=${rootPath}
 libPath=${rootPath}
 
-#Modify this variable to set the location of sonLib
-vgRootPath=${rootPath}/../vg
-vgLibPath=${vgRootPath}
-
 sgExportPath=${rootPath}/sgExport
+protobufPath=${rootPath}/protobuf
 
-cflags += -I ${vgLibPath} -I ${sgExportPath}
-cppflags += -I ${vgLibPath} -I ${sgExportPath}
-basicLibs = ${vgLibPath}/libvg.a ${sgExportPath}/sgExport.a 
+cflags +=  -I ${sgExportPath}
+cppflags +=  -I ${sgExportPath} -I ${protobufPath}/build/include
+basicLibs = ${sgExportPath}/sgExport.a ${protobufPath}/libprotobuf.a
 basicLibsDependencies = ${basicLibs}
 
 

@@ -7,6 +7,10 @@ Prototype code for converting [VG](https://github.com/ekg/vg) to [Side Graph SQL
 
 Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible. 
 
+## Important
+
+This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mostly so I can start developing on my mac (where VG won't build).  Chances are, some logic from VG will be needed eventually (from what I understand from vg.proto, graphs > 64MB need to be merged, for example). At that point will have to look at either integrating into VG or linking against it (and its millions of deps)...
+
 ## Instructions
 
 **Dependencies:**    [VG](https://github.com/ekg/vg).  Expected to be in sister directory to vg2sg but can be changed in include.mk. 
