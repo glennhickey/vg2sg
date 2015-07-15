@@ -1,0 +1,3 @@
+[submodule "sgExport"]
+	path = sgExport
+	url = git@github.com:glennhickey/sgExport.git
