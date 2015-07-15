@@ -21,6 +21,9 @@ void help(char** argv)
        << "   graph.vg:  Input VG graph to convert\n"
        << "   out.fa  :  Output Side Graph sequences file in FASTA format\n"
        << "   out.sql :  Output Side Graph SQL inserts file\n"
+       << "options:" << endl
+       << "    -h, --help         \n"
+       << "    -p, --primaryPath  Primary path name\n"
        << endl;
 }
 
@@ -32,12 +35,14 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  string primaryPathName;
   optind = 4;
   while (true)
   {
     static struct option long_options[] =
        {
-         {"help", no_argument, 0, 'h'}
+         {"help", no_argument, 0, 'h'},
+         {"primaryPath", required_argument, 0, 'p'}
        };
     int option_index = 0;
     int c = getopt_long(argc, argv, "h", long_options, &option_index);
@@ -53,6 +58,9 @@ int main(int argc, char** argv)
     case '?':
       help(argv);
       exit(1);
+    case 'p':
+      primaryPathName = optarg;
+      break;
     default:
       abort();
     }
@@ -71,10 +79,31 @@ int main(int argc, char** argv)
   VGLight vglight;
   vglight.loadGraph(vgStream);
 
+  const VGLight::PathMap& paths = vglight.getPathMap();
+  
+  if (primaryPathName.length() > 0)
+  {
+    if (paths.find(primaryPathName) == paths.end())
+    {
+      throw runtime_error(string("Primary path ") + primaryPathName +
+                          string(" not found in vg"));
+    }
+  }
+  else
+  {
+    if (paths.empty())
+    {
+      throw runtime_error("No paths in input vg");
+    }
+    primaryPathName = paths.begin()->first;
+  }
+  
   // debugf
   cout << "numNodes " << vglight.getNodeSet().size() << endl
        << "numEdges " << vglight.getEdgeSet().size() << endl
-       << "numPaths " << vglight.getPathMap().size() << endl;
+       << "numPaths " << vglight.getPathMap().size() << endl
+       << "primary path name " << primaryPathName << endl;
+
   
   
 }
