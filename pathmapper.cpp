@@ -132,6 +132,7 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
       _seqStrings.push_back("");
     }
     // CASE 2) : Extend existing SG Sequence
+    sg_int_t curSeqLen = _curSeq->getLength();
     assert(_curSeq->getID() < _seqStrings.size());
     const Node* node = _vg->getNode(pos.node_id());
     string dna = node->sequence();
@@ -141,11 +142,17 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     }
     assert(pos.offset() + segLength <= dna.length());
     // add dna string to the sequence
-    _seqStrings[_curSeq->getID()].append(dna.substr(pos.offset(), segLength));
+    _seqStrings[_curSeq->getID()].append(dna);
     _curSeq->setLength(_curSeq->getLength() + segLength);
     assert(_curSeq->getLength() == _seqStrings[_curSeq->getID()].length());
 
     // update lookup
+    SGPosition toPos(_curSeq->getID(), curSeqLen);
+    // todo: reverse mapping shift
+    // todo: offset shift
+    
+    _lookup->addInterval(sgPos, toPos, segLength, reversed);
+                                           
   }
   else
   {
