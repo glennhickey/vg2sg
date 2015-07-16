@@ -43,6 +43,10 @@ public:
    const NodeSet& getNodeSet() const;
    const PathMap& getPathMap() const;
    const EdgeSet& getEdgeSet() const;
+
+   const vg::Node* getNode(int64_t id) const;
+   const vg::Edge* getEdge(int64_t from_id, int64_t to_id,
+                           bool from_start, bool to_end);
    
 protected:
 
@@ -109,6 +113,27 @@ inline const VGLight::PathMap& VGLight::getPathMap() const
 {
   return _paths;
 }
+
+inline const vg::Node* VGLight::getNode(int64_t id) const
+{
+  vg::Node node;
+  node.set_id(id);
+  NodeSet::const_iterator i = _nodes.find(&node);
+  return i != _nodes.end() ? *i : NULL;
+}
+
+inline const vg::Edge* VGLight::getEdge(int64_t from_id, int64_t to_id,
+                                        bool from_start, bool to_end)
+{
+  vg::Edge edge;
+  edge.set_from(from_id);
+  edge.set_to(to_id);
+  edge.set_from_start(from_start);
+  edge.set_to_end(to_end);
+  EdgeSet::const_iterator i = _edges.find(&edge);
+  return i != _edges.end() ? *i : NULL;
+}
+   
 
 
 #endif

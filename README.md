@@ -5,7 +5,11 @@ Prototype code for converting [VG](https://github.com/ekg/vg) to [Side Graph SQL
 
 ## Algorithm
 
-Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible. 
+Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.
+
+**Constraints**
+1. Only paths are converted.  Nodes and edges that aren't in at least one path are ignored.
+2. Cigar edits in paths are not supported.  Any non-trivial (snp/indel in cigar) edits will result in an error. 
 
 ## Important
 
@@ -19,3 +23,18 @@ This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mos
 or
      git clone https://github.com/glennhickey/vg2sg.git --recursive
 
+**Note** Start by verifying that the unit tests all pass:
+
+	  make test
+
+To run the converter:
+
+	  vg2sg input.vg output.fa output.sql
+
+`input.vg` Input variant graph to convert
+
+`output.fa` Output fasta file of all Side Graph sequences
+
+`output.sql` Output text file listing INSERT commands for Sequences, Joins and Paths (for each input sequence) in the graph.
+
+To see all the options, run with no args or use `--help`.

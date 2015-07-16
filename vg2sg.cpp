@@ -18,10 +18,11 @@ using namespace std;
 void help(char** argv)
 {
   cerr << "usage: " << argv[0] << " <graph.vg> <out.fa> <out.sql> [options]\n"
-       << "   graph.vg:  Input VG graph to convert\n"
-       << "   out.fa  :  Output Side Graph sequences file in FASTA format\n"
-       << "   out.sql :  Output Side Graph SQL inserts file\n"
-       << "options:" << endl
+       << "args:\n"
+       << "    graph.vg:  Input VG graph to convert\n"
+       << "    out.fa  :  Output Side Graph sequences file in FASTA format\n"
+       << "    out.sql :  Output Side Graph SQL inserts file\n"
+       << "options:\n"
        << "    -h, --help         \n"
        << "    -p, --primaryPath  Primary path name\n"
        << endl;

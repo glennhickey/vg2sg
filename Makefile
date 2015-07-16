@@ -4,7 +4,7 @@ include ${rootPath}/include.mk
 all : vg2sg
 
 clean : 
-	rm -f  vg2sg vglight.o
+	rm -f  vg2sg vglight.o pathmapper.o
 	cd sgExport && make clean
 	cd tests && make clean
 	rm -f vg.pb.h vg.pb.cc vg.pb.o
@@ -32,8 +32,11 @@ vg.pb.o: vg.pb.h vg.pb.cc
 vglight.o: vglight.cpp vglight.h vg.pb.h
 	${cpp} ${cppflags} -I. vglight.cpp -c
 
-vg2sg :  vg2sg.o vg.pb.o vglight.o ${basicLibsDependencies}
-	${cpp} ${cppflags} ${basicLibs} vg2sg.o vglight.o vg.pb.o -o vg2sg 
+pathmapper.o: pathmapper.cpp pathmapper.h vglight.h vg.pb.h
+	${cpp} ${cppflags} -I. pathmapper.cpp -c
+
+vg2sg :  vg2sg.o vg.pb.o vglight.o pathmapper.o ${basicLibsDependencies}
+	${cpp} ${cppflags} ${basicLibs} vg2sg.o vglight.o pathmapper.o vg.pb.o -o vg2sg 
 
 test : unitTests
 	pushd .  && cd ${sgExportPath} && make test && popd && tests/unitTests
