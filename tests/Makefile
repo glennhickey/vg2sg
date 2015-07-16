@@ -1,6 +1,9 @@
 rootPath = ..
 include ${rootPath}/include.mk
 
+vg2sgObjectsAll = $(wildcard ${rootPath}/*.o)
+vg2sgObjects=$(subst ../vg2sg.o,,${vg2sgObjectsAll})
+
 all : unitTests
 
 clean :
@@ -17,6 +20,6 @@ unitTests.o : unitTests.h unitTests.cpp
 pathmapperTests.o : pathmapperTests.cpp ${rootPath}/*.h
 	${cpp} ${cppflags} -I ${sgExportPath}/tests -I${rootPath}/ pathmapperTests.cpp -c
 
-unitTests : CuTest.o unitTests.o pathmapperTests.o ${sgExportPath}/sgExport.a
-	${cpp} -I ${sgExportPath}/tests -I${rootPath}/ ${cppflags} ${sgExportPath}/sgExport.a CuTest.o unitTests.o pathmapperTests.o  -o unitTests
+unitTests : CuTest.o unitTests.o pathmapperTests.o ${sgExportPath}/sgExport.a ${vg2sgObjects} ${basicLibsDependencies}
+	${cpp} -I ${sgExportPath}/tests -I${rootPath}/ ${cppflags} ${basicLibs} ${sgExportPath}/sgExport.a ${vg2sgObjects} CuTest.o unitTests.o pathmapperTests.o  -o unitTests
 

@@ -42,9 +42,6 @@ void VGLight::loadGraph(istream& in)
   }
   
   _graphs.clear();
-  _paths.clear();
-  _nodes.clear();
-  _edges.clear();
 
   do
   {
@@ -69,8 +66,19 @@ void VGLight::loadGraph(istream& in)
   mergeGraphs();
 }
 
+void VGLight::loadGraph(const Graph& graph)
+{
+  _graphs.resize(1);
+  _graphs[0] = graph;
+  mergeGraphs();
+}
+
 void VGLight::mergeGraphs()
 {
+  _paths.clear();
+  _nodes.clear();
+  _edges.clear();
+
   for (size_t i = 0; i < _graphs.size(); ++i)
   {
     for (size_t j = 0; j < _graphs[i].node_size(); ++j)

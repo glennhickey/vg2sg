@@ -25,6 +25,13 @@ public:
    /** load the vg */
    void init(const VGLight* vg);
 
+   /** get the side graph we made */
+   const SideGraph* getSideGraph() const;
+
+   /** get a chunk of DNA sequence from the side graph */
+   std::string getSideGraphDNA(sg_int_t seqID, sg_int_t offset = 0,
+                               sg_int_t length = -1, bool reversed = false);
+
    /** add a path by name (leave control of order of addition to 
     * calling code) */
    void addPath(const std::string& name);
@@ -55,6 +62,11 @@ protected:
    std::map<int64_t, sg_int_t> _nodeIDMap;
    SGSequence* _curSeq;
 };
+
+inline const SideGraph* PathMapper::getSideGraph() const
+{
+  return _sg;
+}
 
 inline const std::string& PathMapper::getPathName(sg_int_t id) const
 {

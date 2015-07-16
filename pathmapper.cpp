@@ -54,6 +54,23 @@ void PathMapper::init(const VGLight* vg)
   _pathIDs.clear();
 }
 
+string PathMapper::getSideGraphDNA(sg_int_t seqID, sg_int_t offset,
+                                   sg_int_t length, bool reversed)
+{
+  assert(seqID >= 0 && seqID < _seqStrings.size());
+  if (length == -1)
+  {
+    length = _seqStrings[seqID].length();
+  }
+  if (!reversed)
+  {
+    return _seqStrings[seqID].substr(offset, length);
+  }
+  string buffer = _seqStrings[seqID];
+  reverseComplement(buffer);
+  return buffer.substr(offset, length);
+}
+
 void PathMapper::addPath(const std::string& pathName)
 {
   assert(_pathIDs.find(pathName) == _pathIDs.end());
