@@ -32,19 +32,31 @@ public:
    std::string getSideGraphDNA(sg_int_t seqID, sg_int_t offset = 0,
                                sg_int_t length = -1, bool reversed = false);
 
+   /** get the DNA sequence of a path in the *side graph* */
+   std::string getSideGraphPathDNA(const std::string& pathName);
+
+   /** get the path in the Side Graph that corresponds to an added VG path
+    */
+   const std::vector<SGSegment>& getSideGraphPath(
+     const std::string& vgPathName);
+
+
    /** add a path by name (leave control of order of addition to 
     * calling code) */
    void addPath(const std::string& name);
 
-   /** copied from halCommon.h -- dont want hal dep just for this*/
-   static char reverseComplement(char c);
-   static void reverseComplement(std::string& s);
-
 protected:
 
+   /** add a segment corresponding to an input node */
    void addSegment(sg_int_t pathID, sg_int_t pathPos,
                    const vg::Position& pos, bool reversed,
                    sg_int_t segLength);
+
+   /** second pass of input path to compute joins and side graph
+    * segments. */
+   void addPathJoins(const std::string& name,
+                     const VGLight::MappingList& mappings);
+
 
    std::string makeSeqName(sg_int_t pathID, sg_int_t pathPos);
 
@@ -57,6 +69,7 @@ protected:
    std::vector<std::string> _pathNames;
    std::map<std::string, sg_int_t> _pathIDs;
    std::vector<std::string> _seqStrings;
+   std::vector<std::vector<SGSegment> > _sgPaths;
    // make sure node ids are in range [0, numNodes)
    // note to self- some of the maps should be hash tables
    std::map<int64_t, sg_int_t> _nodeIDMap;

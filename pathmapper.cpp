@@ -30,6 +30,9 @@ void PathMapper::init(const VGLight* vg)
   delete _sg;
   _sg = new SideGraph();
 
+  _seqStrings.clear();
+  _sgPaths.clear();
+  
   delete _lookup;
   _lookup = new SGLookup();
   _nodeIDMap.clear();
@@ -67,8 +70,27 @@ string PathMapper::getSideGraphDNA(sg_int_t seqID, sg_int_t offset,
     return _seqStrings[seqID].substr(offset, length);
   }
   string buffer = _seqStrings[seqID];
-  reverseComplement(buffer);
+  VGLight::reverseComplement(buffer);
   return buffer.substr(offset, length);
+}
+
+string PathMapper::getSideGraphPathDNA(const string& pathName)
+{
+  string outString;
+  const vector<SGSegment>& path = getSideGraphPath(pathName);
+  for (size_t i = 0; i < path.size(); ++i)
+  {
+    outString += getSideGraphDNA(path[0].getSide().getBase().getSeqID(),
+                                 path[0].getMinPos().getPos(),
+                                 path[0].getLength(),
+                                 !path[0].getSide().getForward());
+  }
+  return outString;
+}
+
+const vector<SGSegment>& PathMapper::getSideGraphPath(const string& pathName)
+{
+  return _sgPaths[getPathID(pathName)];
 }
 
 void PathMapper::addPath(const std::string& pathName)
@@ -93,7 +115,7 @@ void PathMapper::addPath(const std::string& pathName)
     sg_int_t segmentLength = 0;
     int numEdits = i->edit_size();
     assert(numEdits > 0);
-    for (int j = 0; j < numEdits; ++i)
+    for (int j = 0; j < numEdits; ++j)
     {
       const Edit& edit = i->edit(j);
       assert(edit.from_length() > 0);
@@ -125,6 +147,12 @@ void PathMapper::addPath(const std::string& pathName)
     }
     addSegment(pathID, pathPos, pos, reversed, segmentLength);    
   }
+  if (_curSeq != NULL)
+  {
+    _sg->addSequence(_curSeq);
+  }
+  _curSeq = NULL;
+  addPathJoins(pathName, mappings);
 }
 
 void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
@@ -143,7 +171,7 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     // CASE 1) : Create new SG Sequence
     if (_curSeq == NULL)
     {
-      _curSeq = new SGSequence(_sg->getNumSequences(), segLength,
+      _curSeq = new SGSequence(_sg->getNumSequences(), 0,
                                makeSeqName(pathID, pathPos));
       assert(_curSeq->getID() == _seqStrings.size());
       _seqStrings.push_back("");
@@ -155,7 +183,7 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     string dna = node->sequence();
     if (reversed == true)
     {
-      reverseComplement(dna);
+      VGLight::reverseComplement(dna);
     }
     assert(pos.offset() + segLength <= dna.length());
     // add dna string to the sequence
@@ -174,10 +202,66 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
   else
   {
     // CASE 3) : Segment maps to existing SG Sequence
+    if (_curSeq != NULL)
+    {
+      _sg->addSequence(_curSeq);
+    }
     _curSeq = NULL;
   }
+}
 
-  // add joins based on lookup
+// doesn't really need a second pass but whatever
+void PathMapper::addPathJoins(const string& name,
+                              const VGLight::MappingList& mappings)
+{
+  _sgPaths.resize(_sgPaths.size() + 1);
+  vector<SGSegment>& sgPath = _sgPaths.back();
+  int mappingCount = 0;
+  for (VGLight::MappingList::const_iterator i = mappings.begin();
+       i != mappings.end(); ++i, ++mappingCount)
+  {
+    const Position& pos = i->position();
+    bool reversed = i->is_reverse();
+    const Node* node = _vg->getNode(pos.node_id());
+    int numEdits = i->edit_size();
+    int64_t segmentLength = 0;
+    for (int j = 0; j < numEdits; ++j)
+    {
+      segmentLength += i->edit(j).from_length();
+    }
+    int64_t offset = pos.offset();
+    assert(offset >= 0);
+    if (offset > 0 && mappingCount != 0)
+    {
+      stringstream ss;
+      ss << "Offset > 0 found on " << mappingCount << "th mappping of "
+         << "path " << name << ".  Offsets only permitted on 0th mapping";
+      throw runtime_error(ss.str());
+    }
+    sg_int_t nodeID = _nodeIDMap.find(node->id())->second;
+    SGPosition start(nodeID, offset);
+    SGPosition end(nodeID, offset + segmentLength - 1);
+    if (reversed)
+    {
+      swap(start, end);
+    }
+    _lookup->getPath(start, end, sgPath, true);
+  }
+
+  for (size_t i = 1; i < sgPath.size(); ++i)
+  {
+    SGSide srcSide = sgPath[i-1].getOutSide();
+    SGSide tgtSide = sgPath[i].getInSide();
+    SGJoin* join = new SGJoin(srcSide, tgtSide);
+    if (!join->isTrivial())
+    {
+      _sg->addJoin(join);
+    }
+    else
+    {
+      delete join;
+    }
+  }
 }
 
 string PathMapper::makeSeqName(sg_int_t pathID, sg_int_t pathPos)
@@ -187,56 +271,3 @@ string PathMapper::makeSeqName(sg_int_t pathID, sg_int_t pathPos)
   return ss.str();
 }
   
-char PathMapper::reverseComplement(char c)
-{
-  switch (c)
-  {
-  case 'A' : return 'T'; 
-  case 'a' : return 't'; 
-  case 'C' : return 'G'; 
-  case 'c' : return 'g';
-  case 'G' : return 'C';
-  case 'g' : return 'c';
-  case 'T' : return 'A';
-  case 't' : return 'a';
-  default : break;
-  }
-  return c;
-}
-
-void PathMapper::reverseComplement(std::string& s)
-{
-  if (!s.empty())
-  {
-    size_t j = s.length() - 1;
-    size_t i = 0;
-    char buf;
-    do
-    {
-      while (j > 0 && s[j] == '-')
-      {
-        --j;
-      }
-      while (i < s.length() - 1 && s[i] == '-')
-      {
-        ++i;
-      }
-      
-      if (i >= j || s[i] == '-' || s[j] == '-')
-      {
-        if (i == j && s[i] != '-')
-        {
-          s[i] = reverseComplement(s[i]);
-        }
-        break;
-      }
-
-      buf = reverseComplement(s[i]);
-      s[i] = reverseComplement(s[j]);
-      s[j] = buf;
-
-      ++i;
-      --j;
-    } while (true);
-  }
-}

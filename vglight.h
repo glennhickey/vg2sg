@@ -50,6 +50,13 @@ public:
    const vg::Node* getNode(int64_t id) const;
    const vg::Edge* getEdge(int64_t from_id, int64_t to_id,
                            bool from_start, bool to_end);
+
+   /** get string for a VG path */
+   void getPathDNA(const std::string& name, std::string& outDNA) const;
+
+   /** copied from halCommon.h -- dont want hal dep just for this*/
+   static char reverseComplement(char c);
+   static void reverseComplement(std::string& s);
    
 protected:
 

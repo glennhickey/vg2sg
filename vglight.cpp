@@ -101,3 +101,84 @@ void VGLight::mergeGraphs()
     }
   }
 }
+
+void VGLight::getPathDNA(const string& pathName, string& outDNA) const
+{
+  outDNA.erase();
+  assert(_paths.find(pathName) != _paths.end());
+  const MappingList& mappingList = _paths.find(pathName)->second;
+  for (MappingList::const_iterator i = mappingList.begin();
+       i != mappingList.end(); ++i)
+  {
+    const Position& pos = i->position();
+    bool reversed = i->is_reverse();
+    const Node* node = getNode(pos.node_id());
+    int numEdits = i->edit_size();
+    int64_t segmentLength = 0;
+    for (int j = 0; j < numEdits; ++j)
+    {
+      segmentLength += i->edit(j).from_length();
+    }
+    int64_t offset = pos.offset();
+    string dna = node->sequence().substr(offset, segmentLength);
+    if (reversed)
+    {
+      reverseComplement(dna);
+    }
+    outDNA += dna;
+  }
+}
+
+char VGLight::reverseComplement(char c)
+{
+  switch (c)
+  {
+  case 'A' : return 'T'; 
+  case 'a' : return 't'; 
+  case 'C' : return 'G'; 
+  case 'c' : return 'g';
+  case 'G' : return 'C';
+  case 'g' : return 'c';
+  case 'T' : return 'A';
+  case 't' : return 'a';
+  default : break;
+  }
+  return c;
+}
+
+void VGLight::reverseComplement(std::string& s)
+{
+  if (!s.empty())
+  {
+    size_t j = s.length() - 1;
+    size_t i = 0;
+    char buf;
+    do
+    {
+      while (j > 0 && s[j] == '-')
+      {
+        --j;
+      }
+      while (i < s.length() - 1 && s[i] == '-')
+      {
+        ++i;
+      }
+      
+      if (i >= j || s[i] == '-' || s[j] == '-')
+      {
+        if (i == j && s[i] != '-')
+        {
+          s[i] = reverseComplement(s[i]);
+        }
+        break;
+      }
+
+      buf = reverseComplement(s[i]);
+      s[i] = reverseComplement(s[j]);
+      s[j] = buf;
+
+      ++i;
+      --j;
+    } while (true);
+  }
+}
