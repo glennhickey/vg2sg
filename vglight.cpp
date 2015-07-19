@@ -5,6 +5,7 @@
  */
 
 #include <fstream>
+#include <sstream>
 #include "google/protobuf/stubs/common.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
@@ -113,12 +114,7 @@ void VGLight::getPathDNA(const string& pathName, string& outDNA) const
     const Position& pos = i->position();
     bool reversed = i->is_reverse();
     const Node* node = getNode(pos.node_id());
-    int numEdits = i->edit_size();
-    int64_t segmentLength = 0;
-    for (int j = 0; j < numEdits; ++j)
-    {
-      segmentLength += i->edit(j).from_length();
-    }
+    int64_t segmentLength = getSegmentLength(*i);
     int64_t offset = pos.offset();
     string dna = node->sequence().substr(offset, segmentLength);
     if (reversed)
@@ -127,6 +123,50 @@ void VGLight::getPathDNA(const string& pathName, string& outDNA) const
     }
     outDNA += dna;
   }
+}
+
+int64_t VGLight::getSegmentLength(const Mapping& mapping) const
+{
+  int64_t segmentLength = 0;
+  // no edits: take distance from offset to end of node
+  if (mapping.edit_size() == 0)
+  {
+    const Position& pos = mapping.position();
+    const Node* node = getNode(pos.node_id());
+    segmentLength = node->sequence().length() - pos.offset();
+  }
+  // has edits: take total length of edits (???)
+  else
+  {
+    int numEdits = mapping.edit_size();
+    for (int i = 0; i < numEdits; ++i)
+    {
+      const Edit& edit = mapping.edit(i);
+      assert(edit.from_length() > 0);
+      if (edit.from_length() != edit.to_length())
+      {
+        stringstream msg;
+        msg << "Nontrivial edit found: : to_length != from_length";
+        throw runtime_error(msg.str());
+      }
+      else
+      {
+        const string& cigar = edit.sequence();
+        stringstream expected;
+        expected << edit.from_length();
+        expected << "M";
+        if (cigar.length() > 0 && cigar != expected.str())
+        {
+          stringstream msg;
+          msg << "Nontrivial edit found: sequence=" << cigar
+              << " != expected=" << expected.str();
+          throw runtime_error(msg.str());          
+        }
+        segmentLength += mapping.edit(i).from_length();
+      }
+    }
+  }
+  return segmentLength;
 }
 
 char VGLight::reverseComplement(char c)

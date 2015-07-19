@@ -109,8 +109,8 @@ int main(int argc, char** argv)
     if (i->first != primaryPathName)
     {
       cout << "Adding VG path: " << i->first << endl;
+      pm.addPath(i->first);
     }
-    pm.addPath(i->first);
   }
   pm.verifyPaths();
 

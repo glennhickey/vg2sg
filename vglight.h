@@ -54,6 +54,9 @@ public:
    /** get string for a VG path */
    void getPathDNA(const std::string& name, std::string& outDNA) const;
 
+   /** get length of a path segment */
+   int64_t getSegmentLength(const vg::Mapping& mapping) const;
+
    /** copied from halCommon.h -- dont want hal dep just for this*/
    static char reverseComplement(char c);
    static void reverseComplement(std::string& s);

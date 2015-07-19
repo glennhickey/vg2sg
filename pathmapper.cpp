@@ -116,39 +116,8 @@ void PathMapper::addPath(const std::string& pathName)
   {
     const Position& pos = i->position();
     bool reversed = i->is_reverse();
-    sg_int_t segmentLength = 0;
-    int numEdits = i->edit_size();
-    assert(numEdits > 0);
-    for (int j = 0; j < numEdits; ++j)
-    {
-      const Edit& edit = i->edit(j);
-      assert(edit.from_length() > 0);
-      if (edit.from_length() != edit.to_length())
-      {
-        stringstream msg;
-        msg << "Nontrivial edit found: " << j <<"th Edit of " << mappingCount
-            << "th Mapping of Path " << pathName
-            << ": to_length != from_length";
-        throw runtime_error(msg.str());
-      }
-      else
-      {
-        const string& cigar = edit.sequence();
-        stringstream expected;
-        expected << edit.from_length();
-        expected << "M";
-        if (cigar.length() > 0 && cigar != expected.str())
-        {
-          stringstream msg;
-          msg << "Nontrivial edit found: " << j <<"th Edit of " << mappingCount
-              << "th Mapping of Path " << pathName
-              << ": sequence=" << cigar << " != expected=" << expected.str();
-          throw runtime_error(msg.str());          
-        }
-      }
-      segmentLength += edit.from_length();
-      pathPos += edit.from_length();
-    }
+    sg_int_t segmentLength = _vg->getSegmentLength(*i);
+    pathPos += segmentLength;
     addSegment(pathID, pathPos, pos, reversed, segmentLength);    
   }
   if (_curSeq != NULL)
@@ -183,7 +152,6 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
   // when mapping, our "from" coordinate is node-relative
   sg_int_t sgNodeID = _nodeIDMap.find(pos.node_id())->second;
   SGPosition sgPos(sgNodeID, pos.offset());
-
   SGSide mapResult = _lookup->mapPosition(sgPos);
   bool found = mapResult.getBase() != SideGraph::NullPos;
 
@@ -218,7 +186,6 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     // todo: offset shift
     
     _lookup->addInterval(sgPos, toPos, segLength, reversed);
-                                           
   }
   else
   {
@@ -244,12 +211,7 @@ void PathMapper::addPathJoins(const string& name,
     const Position& pos = i->position();
     bool reversed = i->is_reverse();
     const Node* node = _vg->getNode(pos.node_id());
-    int numEdits = i->edit_size();
-    int64_t segmentLength = 0;
-    for (int j = 0; j < numEdits; ++j)
-    {
-      segmentLength += i->edit(j).from_length();
-    }
+    int64_t segmentLength = _vg->getSegmentLength(*i);
     int64_t offset = pos.offset();
     assert(offset >= 0);
     if (offset > 0 && mappingCount != 0)
