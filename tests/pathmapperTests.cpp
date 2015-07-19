@@ -157,11 +157,20 @@ void simpleTest(CuTest *testCase)
   CuAssertTrue(testCase, sgHtap[0].getMinPos() == SGPosition(0, 0));
   CuAssertTrue(testCase,
                sgHtap[0].getMaxPos() == SGPosition(0, dna.length() -1));
-  CuAssertTrue(testCase, sgHtap[0].getSide().getForward() == false);
+  CuAssertTrue(testCase, sgHtap[0].getSide().getForward() == true);
   std::string vgHtap;
   vg.getPathDNA("htap", vgHtap);
+  seqDNA = pm.getSideGraphDNA(seq->getID());
   CuAssertTrue(testCase, vgHtap == seqDNA);
   CuAssertTrue(testCase, vgHtap == pm.getSideGraphPathDNA("htap"));
+
+  try {
+    pm.verifyPaths();
+  }
+  catch(...)
+  {
+    CuAssertTrue(testCase, false);
+  }    
 }
 
 ///////////////////////////////////////////////////////////
@@ -198,6 +207,18 @@ void inversionTest(CuTest *testCase)
   CuAssertTrue(testCase, seq->getLength() == dna.length());
   string seqDNA = pm.getSideGraphDNA(seq->getID());
   CuAssertTrue(testCase, seqDNA == dna);
+  string pathDNA = pm.getSideGraphPathDNA("path");
+  CuAssertTrue(testCase, pathDNA == dna);
+  vector<SGSegment> sgPath = pm.getSideGraphPath("path");
+  CuAssertTrue(testCase, sgPath.size() == 1);
+
+  try {
+    pm.verifyPaths();
+  }
+  catch(...)
+  {
+    CuAssertTrue(testCase, false);
+  }    
 }
 
 ///////////////////////////////////////////////////////////
@@ -209,7 +230,7 @@ void overlapTest(CuTest *testCase)
   CuAssertTrue(testCase, true);
   Graph graph;
 
-  // simple forward path;
+  // "path1" simple forward path;
   vector<const Node*> path1;
   vector<bool> flips1(4, false);
   int nc = 0;
@@ -222,7 +243,7 @@ void overlapTest(CuTest *testCase)
   string trueSeq0 = path1[0]->sequence() + path1[1]->sequence() +
      path1[2]->sequence() + path1[3]->sequence();
 
-  // single snp at 3rd node
+  // "path2" single snp at 3rd node
   vector<const Node*> path2;
   vector<bool> flips2(4, false);
   path2.push_back(path1[0]);
@@ -232,12 +253,12 @@ void overlapTest(CuTest *testCase)
   makePath(graph, "path2", path2, flips2);
 
   string trueSeq1 = path2[2]->sequence();
-  SGJoin trueJoin1(SGSide(SGPosition(0, 5 + 7), false),
+  SGJoin trueJoin1(SGSide(SGPosition(0, 5 + 7 - 1), false),
                    SGSide(SGPosition(1, 0), true));
   SGJoin trueJoin2(SGSide(SGPosition(1, 0), false),
-                   SGSide(SGPosition(0, 5 + 7 + 2), true));
+                   SGSide(SGPosition(0, 5 + 7 + 1), true));
 
-  // start backwards at last two nodes of path2,
+  // "path3" start backwards at last two nodes of path2,
   // and continue backwards over two new nodes
   vector<const Node*> path3;
   vector<bool> flips3(4, false);
@@ -251,9 +272,9 @@ void overlapTest(CuTest *testCase)
   string trueSeq2 = path3[3]->sequence() + path3[2]->sequence();
   VGLight::reverseComplement(trueSeq2);
   SGJoin trueJoin3(SGSide(SGPosition(1, 0), true),
-                   SGSide(SGPosition(2, 0), false));
+                   SGSide(SGPosition(2, 0), true));
   
-  // path1 but delete second node and duplicated 3rd
+  // "path4" path1 but delete second node and duplicated 3rd
   vector<const Node*> path4;
   vector<bool> flips4(4, false);
   path4.push_back(path1[0]);
@@ -264,8 +285,8 @@ void overlapTest(CuTest *testCase)
 
   SGJoin trueJoin4(SGSide(SGPosition(0, 4), false),
                    SGSide(SGPosition(0, 12), true));
-  SGJoin trueJoin5(SGSide(SGPosition(0, 13), false),
-                   SGSide(SGPosition(0, 13), true));
+  SGJoin trueJoin5(SGSide(SGPosition(0, 12), false),
+                   SGSide(SGPosition(0, 12), true));
   
   VGLight vg;
   vg.loadGraph(graph);
@@ -274,10 +295,9 @@ void overlapTest(CuTest *testCase)
   pm.addPath("path1");
   pm.addPath("path2");
   pm.addPath("path3");
+  pm.addPath("path4");
   const SideGraph* sg = pm.getSideGraph();
-  cout << *sg << endl;
   CuAssertTrue(testCase, sg->getNumSequences() == 3);
-  
   const SGSequence* seq = sg->getSequence(0);
   string seqDNA = pm.getSideGraphDNA(seq->getID());
   CuAssertTrue(testCase, seq->getLength() == seqDNA.length());
@@ -293,9 +313,42 @@ void overlapTest(CuTest *testCase)
   CuAssertTrue(testCase, seq->getLength() == seqDNA.length());
   CuAssertTrue(testCase, seqDNA == trueSeq2);
 
-  
+  string sgPath1 = pm.getSideGraphPathDNA("path1");
+  string vgPath1;
+  vg.getPathDNA("path1", vgPath1);
+  CuAssertTrue(testCase, sgPath1 == vgPath1);
 
+  string sgPath2 = pm.getSideGraphPathDNA("path2");
+  string vgPath2;
+  vg.getPathDNA("path2", vgPath2);
+  CuAssertTrue(testCase, sgPath2 == vgPath2);
 
+  string sgPath3 = pm.getSideGraphPathDNA("path3");
+  string vgPath3;
+  vg.getPathDNA("path3", vgPath3);
+
+  string temp = path2[3]->sequence();
+  VGLight::reverseComplement(temp);
+
+  CuAssertTrue(testCase, sgPath3 == vgPath3);
+
+  string sgPath4 = pm.getSideGraphPathDNA("path4");
+  string vgPath4;
+  vg.getPathDNA("path4", vgPath4);
+  CuAssertTrue(testCase, sgPath4 == vgPath4);
+
+  CuAssertTrue(testCase, sg->getJoin(&trueJoin1) != NULL);
+  CuAssertTrue(testCase, sg->getJoin(&trueJoin2) != NULL);
+  CuAssertTrue(testCase, sg->getJoin(&trueJoin3) != NULL);
+  CuAssertTrue(testCase, sg->getJoin(&trueJoin4) != NULL);
+  CuAssertTrue(testCase, sg->getJoin(&trueJoin5) != NULL);
+  try {
+    pm.verifyPaths();
+  }
+  catch(...)
+  {
+    CuAssertTrue(testCase, false);
+  }    
 }
 
 

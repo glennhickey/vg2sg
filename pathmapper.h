@@ -30,20 +30,25 @@ public:
 
    /** get a chunk of DNA sequence from the side graph */
    std::string getSideGraphDNA(sg_int_t seqID, sg_int_t offset = 0,
-                               sg_int_t length = -1, bool reversed = false);
+                               sg_int_t length = -1, bool reversed = false)
+     const;
 
    /** get the DNA sequence of a path in the *side graph* */
-   std::string getSideGraphPathDNA(const std::string& pathName);
+   std::string getSideGraphPathDNA(const std::string& pathName) const;
 
    /** get the path in the Side Graph that corresponds to an added VG path
     */
    const std::vector<SGSegment>& getSideGraphPath(
-     const std::string& vgPathName);
+     const std::string& vgPathName) const;
 
 
    /** add a path by name (leave control of order of addition to 
     * calling code) */
    void addPath(const std::string& name);
+
+   /** throw an exception if side graph path's dna doesn't jive with
+    * vg path's dna*/
+   void verifyPaths() const;
 
 protected:
 
@@ -56,6 +61,11 @@ protected:
     * segments. */
    void addPathJoins(const std::string& name,
                      const VGLight::MappingList& mappings);
+
+   /** append path onto the end of prevPath, merging the last segment
+    * of prevPath with first segment of nextPath if possible */
+   void mergePaths(std::vector<SGSegment>& prevPath,
+                   const std::vector<SGSegment>& path) const;
 
 
    std::string makeSeqName(sg_int_t pathID, sg_int_t pathPos);
@@ -92,6 +102,17 @@ inline sg_int_t PathMapper::getPathID(const std::string& name) const
   std::map<std::string, sg_int_t>::const_iterator i = _pathIDs.find(name);
   assert(i != _pathIDs.end());
   return i->second;
+}
+
+inline std::ostream& operator<<(std::ostream& os,
+                                const std::vector<SGSegment>& segs)
+{
+  os << "(";
+  for (int i = 0; i < segs.size(); ++i)
+  {
+    os << segs[i] << (i < segs.size() - 1 ? "," : ")");
+  }
+  return os;
 }
 
 #endif

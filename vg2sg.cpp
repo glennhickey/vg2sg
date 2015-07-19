@@ -11,7 +11,7 @@
 #include <fstream>
 #include <getopt.h>
 
-#include "vglight.h"
+#include "pathmapper.h"
 
 using namespace std;
 
@@ -98,13 +98,23 @@ int main(int argc, char** argv)
     }
     primaryPathName = paths.begin()->first;
   }
-  
-  // debugf
-  cout << "numNodes " << vglight.getNodeSet().size() << endl
-       << "numEdges " << vglight.getEdgeSet().size() << endl
-       << "numPaths " << vglight.getPathMap().size() << endl
-       << "primary path name " << primaryPathName << endl;
 
+  PathMapper pm;
+  pm.init(&vglight);
+  cout << "Adding (primary) VG path: " << primaryPathName << endl;
+  pm.addPath(primaryPathName);
+  for (VGLight::PathMap::const_iterator i = paths.begin(); i != paths.end();
+       ++i)
+  {
+    if (i->first != primaryPathName)
+    {
+      cout << "Adding VG path: " << i->first << endl;
+    }
+    pm.addPath(i->first);
+  }
+  pm.verifyPaths();
+
+  cout << "side graph = " << *pm.getSideGraph() << endl;
   
   
 }

@@ -58,37 +58,41 @@ void PathMapper::init(const VGLight* vg)
 }
 
 string PathMapper::getSideGraphDNA(sg_int_t seqID, sg_int_t offset,
-                                   sg_int_t length, bool reversed)
+                                   sg_int_t length, bool reversed) const
 {
   assert(seqID >= 0 && seqID < _seqStrings.size());
   if (length == -1)
   {
     length = _seqStrings[seqID].length();
   }
-  if (!reversed)
+  string dna = _seqStrings[seqID].substr(offset, length);
+  if (reversed)
   {
-    return _seqStrings[seqID].substr(offset, length);
+    VGLight::reverseComplement(dna);
   }
-  string buffer = _seqStrings[seqID];
-  VGLight::reverseComplement(buffer);
-  return buffer.substr(offset, length);
+  return dna;
 }
 
-string PathMapper::getSideGraphPathDNA(const string& pathName)
+string PathMapper::getSideGraphPathDNA(const string& pathName) const
 {
   string outString;
   const vector<SGSegment>& path = getSideGraphPath(pathName);
+  size_t pathLen = 0;
+  (void)pathLen;
   for (size_t i = 0; i < path.size(); ++i)
   {
-    outString += getSideGraphDNA(path[0].getSide().getBase().getSeqID(),
-                                 path[0].getMinPos().getPos(),
-                                 path[0].getLength(),
-                                 !path[0].getSide().getForward());
+    outString += getSideGraphDNA(path[i].getSide().getBase().getSeqID(),
+                                 path[i].getMinPos().getPos(),
+                                 path[i].getLength(),
+                                 !path[i].getSide().getForward());
+    pathLen += path[i].getLength();
   }
+  assert(pathLen == outString.length());
   return outString;
 }
 
 const vector<SGSegment>& PathMapper::getSideGraphPath(const string& pathName)
+  const
 {
   return _sgPaths[getPathID(pathName)];
 }
@@ -153,6 +157,23 @@ void PathMapper::addPath(const std::string& pathName)
   }
   _curSeq = NULL;
   addPathJoins(pathName, mappings);
+}
+
+void PathMapper::verifyPaths() const
+{
+  for (int i = 0; i < _pathNames.size(); ++i)
+  {
+    string sgDNA = getSideGraphPathDNA(_pathNames[i]);
+    string vgDNA;
+    _vg->getPathDNA(_pathNames[i], vgDNA);
+    if (vgDNA != sgDNA)
+    {
+      stringstream ss;
+      ss << "Verification failed for VG path " << _pathNames[i] << ": "
+         << "output DNA differs from input.  Please report this bug";
+      throw runtime_error(ss.str());
+    }
+  }
 }
 
 void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
@@ -245,7 +266,18 @@ void PathMapper::addPathJoins(const string& name,
     {
       swap(start, end);
     }
-    _lookup->getPath(start, end, sgPath, true);
+    vector<SGSegment> nextPath;
+    _lookup->getPath(start, end, nextPath);
+    if (reversed && start == end)
+    {
+      // weird. doesn't seem to be issue in hal2sg. should figure out why,
+      // but just hack here for now (case where 1-base path not reversed)
+      assert(nextPath.size() == 1);
+      nextPath[0] = SGSegment(SGSide(nextPath[0].getSide().getBase(),
+                                     !nextPath[0].getSide().getForward()),
+                              nextPath[0].getLength());
+    }
+    mergePaths(sgPath, nextPath);
   }
 
   for (size_t i = 1; i < sgPath.size(); ++i)
@@ -253,6 +285,7 @@ void PathMapper::addPathJoins(const string& name,
     SGSide srcSide = sgPath[i-1].getOutSide();
     SGSide tgtSide = sgPath[i].getInSide();
     SGJoin* join = new SGJoin(srcSide, tgtSide);
+          
     if (!join->isTrivial())
     {
       _sg->addJoin(join);
@@ -261,6 +294,27 @@ void PathMapper::addPathJoins(const string& name,
     {
       delete join;
     }
+  }
+}
+
+void PathMapper::mergePaths(vector<SGSegment>& prevPath,
+                            const vector<SGSegment>& path) const
+{
+  assert(path.size() > 0);
+  const SGSegment& nextSeg = path[0];
+  int i = 0;
+  if (!prevPath.empty() &&
+      prevPath.back().getSide().getForward() ==
+      nextSeg.getSide().getForward() &&
+      prevPath.back().getOutSide().lengthTo(nextSeg.getInSide()) == 0)
+  {
+    prevPath.back().setLength(prevPath.back().getLength() +
+                              nextSeg.getLength());
+    ++i;
+  }
+  for (; i < path.size(); ++i)
+  {
+    prevPath.push_back(path[i]);
   }
 }
 
