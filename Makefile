@@ -15,7 +15,7 @@ unitTests : vg2sg
 vg2sg.o : vg2sg.cpp vglight.h vg.pb.h ${basicLibsDependencies}
 	${cpp} ${cppflags} -I . vg2sg.cpp -c
 
-${sgExportPath}/sgExport.a :
+${sgExportPath}/sgExport.a : ${sgExportPath}/*.cpp ${sgExportPath}/*.h
 	cd ${sgExportPath} && make
 
 ${protobufPath}/libprotobuf.a: ${protobufPath}/src/google/protobuf/*cc  ${protobufPath}/src/google/protobuf/*h
