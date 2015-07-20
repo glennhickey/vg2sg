@@ -21,5 +21,5 @@ pathmapperTests.o : pathmapperTests.cpp ${rootPath}/*.h
 	${cpp} ${cppflags} -I ${sgExportPath}/tests -I${rootPath}/ pathmapperTests.cpp -c
 
 unitTests : CuTest.o unitTests.o pathmapperTests.o ${sgExportPath}/sgExport.a ${vg2sgObjects} ${basicLibsDependencies}
-	${cpp} -I ${sgExportPath}/tests -I${rootPath}/ ${cppflags} ${basicLibs} ${sgExportPath}/sgExport.a ${vg2sgObjects} CuTest.o unitTests.o pathmapperTests.o  -o unitTests
+	${cpp} -I ${sgExportPath}/tests -I${rootPath}/ ${cppflags}  CuTest.o unitTests.o pathmapperTests.o ${vg2sgObjects} ${basicLibs} ${sgExportPath}/sgExport.a -o unitTests
 
