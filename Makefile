@@ -39,7 +39,7 @@ vgsgsql.o: vgsgsql.cpp vgsgsql.h pathmapper.h ${sgExportPath}/*.h
 	${cpp} ${cppflags} -I. vgsgsql.cpp -c
 
 vg2sg :  vg2sg.o vg.pb.o vglight.o pathmapper.o vgsgsql.o ${basicLibsDependencies}
-	${cpp} ${cppflags} ${basicLibs} vg2sg.o vglight.o pathmapper.o vgsgsql.o vg.pb.o -o vg2sg 
+	${cpp} ${cppflags}  vg2sg.o vg.pb.o vglight.o pathmapper.o vgsgsql.o  ${basicLibs} -o vg2sg 
 
 test : unitTests
 	pushd .  && cd ${sgExportPath} && make test && popd && tests/unitTests
