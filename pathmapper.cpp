@@ -32,6 +32,7 @@ void PathMapper::init(const VGLight* vg)
 
   _seqStrings.clear();
   _sgPaths.clear();
+  _sgSeqToVGPathID.clear();
   
   delete _lookup;
   _lookup = new SGLookup();
@@ -97,6 +98,11 @@ const vector<SGSegment>& PathMapper::getSideGraphPath(const string& pathName)
   return _sgPaths[getPathID(pathName)];
 }
 
+const string& PathMapper::getVGPathName(const SGSequence* seq) const
+{
+  return _pathNames[_sgSeqToVGPathID[seq->getID()]];
+}
+
 void PathMapper::addPath(const std::string& pathName)
 {
   assert(_pathIDs.find(pathName) == _pathIDs.end());
@@ -117,8 +123,8 @@ void PathMapper::addPath(const std::string& pathName)
     const Position& pos = i->position();
     bool reversed = i->is_reverse();
     sg_int_t segmentLength = _vg->getSegmentLength(*i);
+    addSegment(pathID, pathPos, pos, reversed, segmentLength);
     pathPos += segmentLength;
-    addSegment(pathID, pathPos, pos, reversed, segmentLength);    
   }
   if (_curSeq != NULL)
   {
@@ -164,6 +170,7 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
                                makeSeqName(pathID, pathPos));
       assert(_curSeq->getID() == _seqStrings.size());
       _seqStrings.push_back("");
+      _sgSeqToVGPathID.push_back(_pathNames.size()-1);
     }
     // CASE 2) : Extend existing SG Sequence
     sg_int_t curSeqLen = _curSeq->getLength();

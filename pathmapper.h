@@ -41,10 +41,20 @@ public:
    const std::vector<SGSegment>& getSideGraphPath(
      const std::string& vgPathName) const;
 
+   /** get the name of the VG path from which a Side Graph sequence was
+    * derived */
+   const std::string& getVGPathName(const SGSequence* seq) const;
 
    /** add a path by name (leave control of order of addition to 
     * calling code) */
    void addPath(const std::string& name);
+
+   /** get name of path (index is the order in which the VG path
+    * was added) */
+   const std::string& getPathName(sg_int_t id) const;
+
+   /** number of paths that were added using addPath */
+   size_t getNumPaths() const;
 
    /** throw an exception if side graph path's dna doesn't jive with
     * vg path's dna*/
@@ -70,7 +80,7 @@ protected:
 
    std::string makeSeqName(sg_int_t pathID, sg_int_t pathPos);
 
-   const std::string& getPathName(sg_int_t id) const;
+
    sg_int_t getPathID(const std::string& name) const;
 
    SideGraph* _sg;
@@ -84,6 +94,7 @@ protected:
    // note to self- some of the maps should be hash tables
    std::map<int64_t, sg_int_t> _nodeIDMap;
    SGSequence* _curSeq;
+   std::vector<sg_int_t> _sgSeqToVGPathID;
 };
 
 inline const SideGraph* PathMapper::getSideGraph() const
@@ -95,6 +106,11 @@ inline const std::string& PathMapper::getPathName(sg_int_t id) const
 {
   assert(id >=0 && id < _pathNames.size());
   return _pathNames[id];
+}
+
+inline size_t PathMapper::getNumPaths() const
+{
+  return _pathNames.size();
 }
 
 inline sg_int_t PathMapper::getPathID(const std::string& name) const

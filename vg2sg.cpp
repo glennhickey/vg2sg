@@ -12,6 +12,7 @@
 #include <getopt.h>
 
 #include "pathmapper.h"
+#include "vgsgsql.h"
 
 using namespace std;
 
@@ -113,6 +114,10 @@ int main(int argc, char** argv)
     }
   }
   pm.verifyPaths();
+
+
+  VGSGSQL sqlWriter;
+  sqlWriter.exportGraph(&pm, outSQLPath, outFaPath, vgPath);
 
   cout << "side graph = " << *pm.getSideGraph() << endl;
   
