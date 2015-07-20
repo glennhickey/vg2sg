@@ -72,7 +72,7 @@ int main(int argc, char** argv)
   string outFaPath = argv[2];
   string outSQLPath = argv[3];
 
-  ifstream vgStream(vgPath);
+  ifstream vgStream(vgPath.c_str());
   if (!vgStream)
   {
     throw runtime_error(string("Error opening " + vgPath));

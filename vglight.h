@@ -9,8 +9,10 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <list>
 #include <iostream>
+#include <stdexcept>
 #include "vg.pb.h"
 
 /*
@@ -38,7 +40,7 @@ public:
    struct EdgePtrLess {
       bool operator()(const vg::Edge* edge, const vg::Edge* edge2) const;
    };
-   typedef std::list<const vg::Mapping> MappingList;
+   typedef std::list<vg::Mapping> MappingList;
    typedef std::set<const vg::Node*, NodePtrLess> NodeSet;
    typedef std::set<const vg::Edge*, EdgePtrLess> EdgeSet;
    typedef std::map<std::string, MappingList> PathMap;

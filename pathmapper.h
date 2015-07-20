@@ -9,6 +9,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include "vglight.h"
 #include "sglookup.h"
