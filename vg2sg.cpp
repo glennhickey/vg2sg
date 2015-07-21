@@ -79,7 +79,18 @@ int main(int argc, char** argv)
   }
   
   VGLight vglight;
+  cout << "Reading input graph from disk" << endl;
   vglight.loadGraph(vgStream);
+  cout << "Graph has " << vglight.getNodeSet().size() << " nodes, "
+       << vglight.getEdgeSet().size() << " edges and "
+       << vglight.getPathMap().size() << " paths";
+  size_t numMappings = 0;
+  for (VGLight::PathMap::const_iterator i = vglight.getPathMap().begin();
+       i != vglight.getPathMap().end(); ++i)
+  {
+    numMappings += i->second.size();
+  }
+  cout << " with a total of " << numMappings << " mappings." << endl;
 
   const VGLight::PathMap& paths = vglight.getPathMap();
   
