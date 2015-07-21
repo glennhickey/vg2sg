@@ -65,6 +65,10 @@ void VGLight::loadGraph(istream& in)
   } while (coded_in->ReadVarint64(&count));
 
   mergeGraphs();
+
+  delete coded_in;
+  delete gzip_in;
+  delete raw_in;
 }
 
 void VGLight::loadGraph(const Graph& graph)
