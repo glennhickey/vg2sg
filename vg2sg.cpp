@@ -26,7 +26,7 @@ void help(char** argv)
        << "options:\n"
        << "    -h, --help         \n"
        << "    -p, --primaryPath  Primary path name\n"
-       << "    -s, --span         Create a dummy path that spans all edges\n"
+       << "    -s, --span         Create a path set that spans all edges\n"
        << "                       to make sure entire graph gets converted.\n"
        << endl;
 }
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   }
   if (span == true)
   {
-    cout << "Adding dummy path that spans all VG edges" << endl;
+    cout << "Adding set of paths that span all VG edges" << endl;
     pm.addSpanningPaths();
   }
   pm.verifyPaths();

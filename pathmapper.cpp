@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <stack>
 #include "pathmapper.h"
+#include "pathspanner.h"
 
 using namespace std;
 using namespace vg;
@@ -144,6 +145,18 @@ void PathMapper::addSpanningPaths()
   if (_vg->getNodeSet().empty())
   {
     return;
+  }
+  PathSpanner ps;
+  ps.init(_vg);
+
+  while (ps.hasNextPath() == true)
+  {
+    string pathName = getSpanningPathName();
+    VGLight::MappingList mappings;
+    ps.getNextPath(mappings);
+    addPath(pathName, mappings);
+    _spanningPaths.insert(pair<sg_int_t, VGLight::MappingList>(
+                            _pathNames.size()-1, mappings));
   }
 }
 
@@ -322,7 +335,7 @@ string PathMapper::getSpanningPathName() const
          _pathNames.end())
   {
     stringstream ss;
-    ss << name << "_" << count;
+    ss << "span_" << count;
     name = ss.str();
     ++count;
   }

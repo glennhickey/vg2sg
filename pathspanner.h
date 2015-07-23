@@ -23,7 +23,7 @@ public:
    PathSpanner();
    ~PathSpanner();
 
-   /** load vg paths */
+   /** load vg paths.     */
    void init(const VGLight* vg);
 
    /** can we get another path with getnextpath() ? */
