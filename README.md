@@ -5,15 +5,14 @@ Prototype code for converting [VG](https://github.com/ekg/vg) to [Side Graph SQL
 
 ## Algorithm
 
-Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.
+Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.  Option to generate path over all edges in VG input to ensure all nodes and edges get converted. 
 
 **Constraints**
-1. Only paths are converted.  Nodes and edges that aren't in at least one path are ignored.
-2. Cigar edits in paths are not supported.  Any non-trivial (snp/indel in cigar) edits will result in an error. 
+1. Cigar edits in paths are not supported.  Any non-trivial (snp/indel in cigar) edits will result in an error. 
 
 ## Important
 
-This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mostly so I can start developing on my mac (where VG won't build).  Chances are, some logic from VG will be needed eventually (from what I understand from vg.proto, graphs > 64MB need to be merged, for example). At that point will have to look at either integrating into VG or linking against it (and its millions of deps)...
+This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mostly so I can start developing on my mac (where VG won't build).  Chances are, some logic from VG will be needed eventually. At that point will have to look at either integrating into VG or linking against it (and its millions of deps)...
 
 ## Instructions
 

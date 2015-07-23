@@ -37,24 +37,31 @@ public:
    struct NodePtrLess {
       bool operator()(const vg::Node* node1, const vg::Node* node2) const;
    };
-   struct EdgePtrLess {
-      bool operator()(const vg::Edge* edge, const vg::Edge* edge2) const;
-   };
    typedef std::list<vg::Mapping> MappingList;
    typedef std::set<const vg::Node*, NodePtrLess> NodeSet;
-   typedef std::set<const vg::Edge*, EdgePtrLess> EdgeSet;
+   typedef std::multimap<int64_t, const vg::Edge*> EdgeMap;
    typedef std::map<std::string, MappingList> PathMap;
 
    const NodeSet& getNodeSet() const;
    const PathMap& getPathMap() const;
-   const EdgeSet& getEdgeSet() const;
+   const EdgeMap& getFromEdgeMap() const;
+   const EdgeMap& getToEdgeMap() const;
+   size_t getNumEdges() const;
 
    const vg::Node* getNode(int64_t id) const;
    const vg::Edge* getEdge(int64_t from_id, int64_t to_id,
-                           bool from_start, bool to_end);
+                           bool from_start, bool to_end) const;
+   const MappingList& getPath(const std::string& name) const;
+
+   /* all edges that touch node in either direction */
+   void getInEdges(const vg::Node* node,
+                         std::vector<const vg::Edge*>& ins) const;
+   void getOutEdges(const vg::Node* node,
+                         std::vector<const vg::Edge*>& outs) const;
 
    /** get string for a VG path */
    void getPathDNA(const std::string& name, std::string& outDNA) const;
+   void getPathDNA(const MappingList& mappingList, std::string& outDNA) const;
 
    /** get length of a path segment */
    int64_t getSegmentLength(const vg::Mapping& mapping) const;
@@ -76,8 +83,10 @@ protected:
    /** Split out graph compoments into sets to (hopefully) handle merging. 
     * these are what we access during conversion */
    NodeSet _nodes;
-   EdgeSet _edges;
+   EdgeMap _fromEdges;
+   EdgeMap _toEdges;
    PathMap _paths;
+   size_t _numEdges;
 };
 
 inline bool VGLight::NodePtrLess::operator()(const vg::Node* node1,
@@ -86,42 +95,24 @@ inline bool VGLight::NodePtrLess::operator()(const vg::Node* node1,
   return node1->id() < node2->id();
 }
 
-inline bool VGLight::EdgePtrLess::operator()(const vg::Edge* edge1,
-                                             const vg::Edge* edge2) const
-{
-  if (edge1->from() < edge2->from())
-  {
-    return true;
-  }
-  else if (edge1->from() == edge2->from())
-  {
-    if (edge1->to() < edge2->to())
-    {
-      return true;
-    }
-    else if (edge1->to() == edge2->to())
-    {
-      if (edge1->from_start() < edge2->from_start())
-      {
-        return true;
-      }
-      else
-      {
-        return edge1->to_end() < edge2->to_end();
-      }
-    }
-  }
-  return false;
-}
-
 inline const VGLight::NodeSet& VGLight::getNodeSet() const
 {
   return _nodes;
 }
 
-inline const VGLight::EdgeSet& VGLight::getEdgeSet() const
+inline const VGLight::EdgeMap& VGLight::getFromEdgeMap() const
 {
-  return _edges;
+  return _fromEdges;
+}
+
+inline const VGLight::EdgeMap& VGLight::getToEdgeMap() const
+{
+  return _toEdges;
+}
+
+inline size_t VGLight::getNumEdges() const
+{
+  return _numEdges;
 }
 
 inline const VGLight::PathMap& VGLight::getPathMap() const
@@ -138,17 +129,27 @@ inline const vg::Node* VGLight::getNode(int64_t id) const
 }
 
 inline const vg::Edge* VGLight::getEdge(int64_t from_id, int64_t to_id,
-                                        bool from_start, bool to_end)
+                                        bool from_start, bool to_end) const 
 {
-  vg::Edge edge;
-  edge.set_from(from_id);
-  edge.set_to(to_id);
-  edge.set_from_start(from_start);
-  edge.set_to_end(to_end);
-  EdgeSet::const_iterator i = _edges.find(&edge);
-  return i != _edges.end() ? *i : NULL;
+  std::pair<EdgeMap::const_iterator, EdgeMap::const_iterator> ret =
+     _fromEdges.equal_range(from_id);
+  for (EdgeMap::const_iterator i = ret.first; i != ret.second; ++i)
+  {
+    if (i->second->to() == to_id &&
+        i->second->from_start() == from_start &&
+        i->second->to_end() == to_end)
+    {
+      return i->second;
+    }
+  }
+  return NULL;
 }
-   
+
+inline const VGLight::MappingList& VGLight::getPath(const std::string& name)
+  const
+{
+  return _paths.find(name)->second;
+}
 
 
 #endif

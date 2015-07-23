@@ -18,7 +18,7 @@ using namespace std;
 using namespace vg;
 using namespace google::protobuf::io;
 
-VGLight::VGLight()
+VGLight::VGLight() : _numEdges(0)
 {
 }
 
@@ -41,9 +41,10 @@ void VGLight::loadGraph(istream& in)
   {
     throw runtime_error("Empty stream");
   }
+
   
   _graphs.clear();
-
+  
   do
   {
     std::string s;
@@ -82,7 +83,9 @@ void VGLight::mergeGraphs()
 {
   _paths.clear();
   _nodes.clear();
-  _edges.clear();
+  _fromEdges.clear();
+  _toEdges.clear();
+  _numEdges = 0;
 
   for (size_t i = 0; i < _graphs.size(); ++i)
   {
@@ -92,7 +95,10 @@ void VGLight::mergeGraphs()
     }
     for (size_t j = 0; j < _graphs[i].edge_size(); ++j)
     {
-      _edges.insert(_graphs[i].mutable_edge(j));
+      const Edge* edge = _graphs[i].mutable_edge(j);
+      _fromEdges.insert(pair<int64_t, const Edge*>(edge->from(), edge));
+      _toEdges.insert(pair<int64_t, const Edge*>(edge->to(), edge));
+      ++_numEdges;
     }
     for (size_t j = 0; j < _graphs[i].path_size(); ++j)
     {
@@ -107,11 +113,42 @@ void VGLight::mergeGraphs()
   }
 }
 
+void VGLight::getInEdges(const Node* node, 
+                         vector<const Edge*>& ins) const
+{
+  ins.clear();
+  pair<EdgeMap::const_iterator, EdgeMap::const_iterator> ret;
+
+  ret = _toEdges.equal_range(node->id());
+  for (EdgeMap::const_iterator i = ret.first; i != ret.second; ++i)
+  {
+    ins.push_back(i->second);
+  }
+}
+
+void VGLight::getOutEdges(const Node* node, 
+                         vector<const Edge*>& outs) const
+{
+  outs.clear();
+  pair<EdgeMap::const_iterator, EdgeMap::const_iterator> ret;
+
+  ret = _fromEdges.equal_range(node->id());
+  for (EdgeMap::const_iterator i = ret.first; i != ret.second; ++i)
+  {
+    outs.push_back(i->second);
+  }
+}
+
 void VGLight::getPathDNA(const string& pathName, string& outDNA) const
 {
-  outDNA.erase();
   assert(_paths.find(pathName) != _paths.end());
   const MappingList& mappingList = _paths.find(pathName)->second;
+  getPathDNA(mappingList, outDNA);
+}
+
+void VGLight::getPathDNA(const MappingList& mappingList, string& outDNA) const
+{
+  outDNA.erase();
   for (MappingList::const_iterator i = mappingList.begin();
        i != mappingList.end(); ++i)
   {

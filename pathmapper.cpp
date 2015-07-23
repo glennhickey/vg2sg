@@ -7,6 +7,8 @@
 #include <vector>
 #include <sstream>
 #include <cassert>
+#include <algorithm>
+#include <stack>
 #include "pathmapper.h"
 
 using namespace std;
@@ -33,6 +35,7 @@ void PathMapper::init(const VGLight* vg)
   _seqStrings.clear();
   _sgPaths.clear();
   _sgSeqToVGPathID.clear();
+  _spanningPaths.clear();
   
   delete _lookup;
   _lookup = new SGLookup();
@@ -103,12 +106,10 @@ const string& PathMapper::getVGPathName(const SGSequence* seq) const
   return _pathNames[_sgSeqToVGPathID[seq->getID()]];
 }
 
-void PathMapper::addPath(const std::string& pathName)
+void PathMapper::addPath(const std::string& pathName,
+                         const VGLight::MappingList& mappings)
 {
   assert(_pathIDs.find(pathName) == _pathIDs.end());
-  const VGLight::PathMap& pathMap = _vg->getPathMap();
-  assert(pathMap.find(pathName) != pathMap.end());
-  const VGLight::MappingList& mappings = pathMap.find(pathName)->second;
 
   _pathNames.push_back(pathName);
   _pathIDs.insert(pair<string, sg_int_t>(pathName, _pathIDs.size()));
@@ -134,13 +135,32 @@ void PathMapper::addPath(const std::string& pathName)
   addPathJoins(pathName, mappings);
 }
 
+void PathMapper::addSpanningPaths()
+{
+  if (_spanningPaths.size() > 0)
+  {
+    throw runtime_error("Spanning paths already added");
+  }
+  if (_vg->getNodeSet().empty())
+  {
+    return;
+  }
+}
+
 void PathMapper::verifyPaths() const
 {
   for (int i = 0; i < _pathNames.size(); ++i)
   {
     string sgDNA = getSideGraphPathDNA(_pathNames[i]);
     string vgDNA;
-    _vg->getPathDNA(_pathNames[i], vgDNA);
+    if (!isSpanningPath(i))
+    {
+      _vg->getPathDNA(_pathNames[i], vgDNA);
+    }
+    else
+    {
+      _vg->getPathDNA(_spanningPaths.find(i)->second, vgDNA);
+    }
     if (vgDNA != sgDNA)
     {
       stringstream ss;
@@ -293,4 +313,18 @@ string PathMapper::makeSeqName(sg_int_t pathID, sg_int_t pathPos)
   ss << getPathName(pathID) << "_" << pathPos;
   return ss.str();
 }
-  
+
+string PathMapper::getSpanningPathName() const
+{
+  int count = 1;
+  string name = "span_0";
+  while (std::find(_pathNames.begin(), _pathNames.end(), name) !=
+         _pathNames.end())
+  {
+    stringstream ss;
+    ss << name << "_" << count;
+    name = ss.str();
+    ++count;
+  }
+  return name;
+}

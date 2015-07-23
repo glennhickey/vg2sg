@@ -4,7 +4,7 @@ include ${rootPath}/include.mk
 all : vg2sg
 
 clean : 
-	rm -f  vg2sg vglight.o pathmapper.o vgsgsql.o
+	rm -f  vg2sg vglight.o pathspanner.o pathmapper.o vgsgsql.o
 	cd sgExport && make clean
 	cd tests && make clean
 	rm -f vg.pb.h vg.pb.cc vg.pb.o
@@ -32,14 +32,17 @@ vg.pb.o: vg.pb.h vg.pb.cc
 vglight.o: vglight.cpp vglight.h vg.pb.h
 	${cpp} ${cppflags} -I. vglight.cpp -c
 
-pathmapper.o: pathmapper.cpp pathmapper.h vglight.h vg.pb.h ${sgExportPath}/*.h
+pathmapper.o: pathmapper.cpp pathmapper.h pathspanner.h vglight.h vg.pb.h ${sgExportPath}/*.h
 	${cpp} ${cppflags} -I. pathmapper.cpp -c
+
+pathspanner.o: pathspanner.cpp pathspanner.h vglight.h vg.pb.h ${sgExportPath}/*.h
+	${cpp} ${cppflags} -I. pathspanner.cpp -c
 
 vgsgsql.o: vgsgsql.cpp vgsgsql.h pathmapper.h ${sgExportPath}/*.h
 	${cpp} ${cppflags} -I. vgsgsql.cpp -c
 
-vg2sg :  vg2sg.o vg.pb.o vglight.o pathmapper.o vgsgsql.o ${basicLibsDependencies}
-	${cpp} ${cppflags}  vg2sg.o vg.pb.o vglight.o pathmapper.o vgsgsql.o  ${basicLibs} -o vg2sg 
+vg2sg :  vg2sg.o vg.pb.o vglight.o pathspanner.o pathmapper.o vgsgsql.o ${basicLibsDependencies}
+	${cpp} ${cppflags}  vg2sg.o vg.pb.o vglight.o pathspanner.o pathmapper.o vgsgsql.o  ${basicLibs} -o vg2sg 
 
 test : unitTests
 	pushd .  && cd ${sgExportPath} && make test && popd && tests/unitTests

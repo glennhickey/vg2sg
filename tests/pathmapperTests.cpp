@@ -117,7 +117,7 @@ void simpleTest(CuTest *testCase)
   vg.loadGraph(graph);
   PathMapper pm;
   pm.init(&vg);
-  pm.addPath("path");
+  pm.addPath("path", vg.getPath("path"));
   const SideGraph* sg = pm.getSideGraph();
   CuAssertTrue(testCase, sg->getNumSequences() == 1);
   const SGSequence* seq = sg->getSequence(0);
@@ -144,7 +144,7 @@ void simpleTest(CuTest *testCase)
   makePath(graph, "htap", htap, spilf);
   vg.loadGraph(graph);
   pm.init(&vg);
-  pm.addPath("htap");
+  pm.addPath("htap", vg.getPath("htap"));
   sg = pm.getSideGraph();
   CuAssertTrue(testCase, sg->getNumSequences() == 1);
   seq = sg->getSequence(0);
@@ -200,7 +200,7 @@ void inversionTest(CuTest *testCase)
   vg.loadGraph(graph);
   PathMapper pm;
   pm.init(&vg);
-  pm.addPath("path");
+  pm.addPath("path", vg.getPath("path"));
   const SideGraph* sg = pm.getSideGraph();
   CuAssertTrue(testCase, sg->getNumSequences() == 1);
   const SGSequence* seq = sg->getSequence(0);
@@ -292,10 +292,10 @@ void overlapTest(CuTest *testCase)
   vg.loadGraph(graph);
   PathMapper pm;
   pm.init(&vg);
-  pm.addPath("path1");
-  pm.addPath("path2");
-  pm.addPath("path3");
-  pm.addPath("path4");
+  pm.addPath("path1", vg.getPath("path1"));
+  pm.addPath("path2", vg.getPath("path2"));
+  pm.addPath("path3", vg.getPath("path3"));
+  pm.addPath("path4", vg.getPath("path4"));
   const SideGraph* sg = pm.getSideGraph();
   CuAssertTrue(testCase, sg->getNumSequences() == 3);
   const SGSequence* seq = sg->getSequence(0);
@@ -350,7 +350,6 @@ void overlapTest(CuTest *testCase)
     CuAssertTrue(testCase, false);
   }    
 }
-
 
 CuSuite* pathMapperTestSuite(void) 
 {

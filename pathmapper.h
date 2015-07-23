@@ -48,7 +48,16 @@ public:
 
    /** add a path by name (leave control of order of addition to 
     * calling code) */
-   void addPath(const std::string& name);
+   void addPath(const std::string& name,
+                const VGLight::MappingList& mappings);
+
+   /** add a set of paths that span edges not covered by existing paths
+    */
+   void addSpanningPaths();
+
+   /** was path created using addSpanningPath()? if so, we probably 
+    * dont want to write it */
+   bool isSpanningPath(sg_int_t id) const;
 
    /** get name of path (index is the order in which the VG path
     * was added) */
@@ -84,6 +93,9 @@ protected:
 
    sg_int_t getPathID(const std::string& name) const;
 
+   /** make a unique spanning path name */
+   std::string getSpanningPathName() const;
+
    SideGraph* _sg;
    SGLookup* _lookup;
    const VGLight* _vg;
@@ -96,6 +108,7 @@ protected:
    std::map<int64_t, sg_int_t> _nodeIDMap;
    SGSequence* _curSeq;
    std::vector<sg_int_t> _sgSeqToVGPathID;
+   std::map<sg_int_t, VGLight::MappingList> _spanningPaths;
 };
 
 inline const SideGraph* PathMapper::getSideGraph() const
@@ -119,6 +132,11 @@ inline sg_int_t PathMapper::getPathID(const std::string& name) const
   std::map<std::string, sg_int_t>::const_iterator i = _pathIDs.find(name);
   assert(i != _pathIDs.end());
   return i->second;
+}
+
+inline bool PathMapper::isSpanningPath(sg_int_t id) const
+{
+  return _spanningPaths.find(id) != _spanningPaths.end();
 }
 
 inline std::ostream& operator<<(std::ostream& os,
