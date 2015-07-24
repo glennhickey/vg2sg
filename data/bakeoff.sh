@@ -29,11 +29,11 @@ function get_region_coords {
 	 # get contig
 	 CONTIG=`cat ${BED} | awk '{print $1}'`
 
-	 #get coordinates
-	 START=`cat ${BED} | awk '{print $2}'`
+	 #get coordinates (convert BED into 1-based, inclusive)
+	 START=`cat ${BED} | awk '{print $2+1}'`
 
 	 #note VCF seems to want inclusive end
-	 END=`cat ${BED} | awk '{print $3-1}'`
+	 END=`cat ${BED} | awk '{print $3}'`
 
 	 echo "${CONTIG}:${START}-${END}"
 }
