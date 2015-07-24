@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   }
   if (span == true)
   {
-    cout << "Adding set of paths that span all VG edges" << endl;
+    cout << "Adding set of paths that span all remaining VG edges" << endl;
     pm.addSpanningPaths();
   }
   pm.verifyPaths();
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
   VGSGSQL sqlWriter;
   sqlWriter.exportGraph(&pm, outSQLPath, outFaPath, vgPath);
 
-  cout << "side graph = " << *pm.getSideGraph() << endl;
+  //cout << "side graph = " << *pm.getSideGraph() << endl;
   
   
 }

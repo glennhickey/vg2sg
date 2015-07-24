@@ -79,33 +79,40 @@ void VGSGSQL::writePathInserts()
   // Allele, and a list of Allele Path Items.
   for (size_t i = 0; i < _pm->getNumPaths(); ++i)
   {
-    _outStream << "INSERT INTO Allele VALUES ("
-               << i << ", "
-               << 0 << ", "
-               << "'" << _pm->getPathName(i) << "'" 
-               << ");\n";
+    if (!_pm->isSpanningPath(i))
+    {
+      _outStream << "INSERT INTO Allele VALUES ("
+                 << i << ", "
+                 << 0 << ", "
+                 << "'" << _pm->getPathName(i) << "'" 
+                 << ");\n";
+    }
   }
   _outStream << endl;
 
   // create a path (AellePathItem) for every sequence
   for (size_t i = 0; i < _pm->getNumPaths(); ++i)
   {
-    _outStream << "-- PATH for VG input sequence "
-               << _pm->getPathName(i) << "\n";
-    const vector<SGSegment>& path = _pm->getSideGraphPath(_pm->getPathName(i));
-    for (size_t j = 0; j < path.size(); ++j)
+    if (!_pm->isSpanningPath(i))
     {
-      _outStream << "INSERT INTO AllelePathItem VALUES ("
-                 << i << ", "
-                 << j << ", "
-                 << path[j].getSide().getBase().getSeqID() << ", "
-                 << path[j].getSide().getBase().getPos() << ", "
-                 << path[j].getLength() << ", "
-                 << (path[j].getSide().getForward() ? "\'TRUE\'" : "\'FALSE\'")
-                 << ");\n";
+      _outStream << "-- PATH for VG input sequence "
+                 << _pm->getPathName(i) << "\n";
+      const vector<SGSegment>& path =
+         _pm->getSideGraphPath(_pm->getPathName(i));
+      for (size_t j = 0; j < path.size(); ++j)
+      {
+        _outStream << "INSERT INTO AllelePathItem VALUES ("
+                   << i << ", "
+                   << j << ", "
+                   << path[j].getSide().getBase().getSeqID() << ", "
+                   << path[j].getSide().getBase().getPos() << ", "
+                   << path[j].getLength() << ", "
+                   << (path[j].getSide().getForward() ? "\'TRUE\'" : "\'FALSE\'")
+                   << ");\n";
       
+      }
+      _outStream <<endl;
     }
-    _outStream <<endl;
   }
 
 }
