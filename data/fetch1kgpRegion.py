@@ -61,7 +61,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 # Function to download 1000 genomes VCFs per chromosome
-def get_1000g_vcf(CONTIG, SLICE_PATH, BED_PATH):
+def get_1000g_vcf(CONTIG):
 
     if not os.path.exists("vcf"):
         os.makedirs("vcf")
@@ -91,19 +91,8 @@ def get_1000g_vcf(CONTIG, SLICE_PATH, BED_PATH):
     os.system("ln {} {}".format(DOWNLOAD_FILE, OUTPUT_FILE))
     os.system("ln {}.tbi {}.tbi".format(DOWNLOAD_FILE, OUTPUT_FILE))
 
-    # Uncompress vcf for Bedtools
-    os.system("gzip -d {}".format(DOWNLOAD_FILE))
-
-    # Intersect region
-    os.system("intersectBed -a {} -b {} > {}".format(BED_PATH, VCF_FILE,
-                                                     SLICE_PATH))
-
-    # Keep vcf compressed
-    os.system("gzip {}".format(VCF_FILE))
-
-
 # Function to download GRCh37 reference FASTAs per chromosome
-def get_GRCh37_fasta(CONTIG, SLICE_PATH, BED_PATH):
+def get_GRCh37_fasta(CONTIG):
 
     if not os.path.exists("fa"):
         os.makedirs("fa")
@@ -123,10 +112,6 @@ def get_GRCh37_fasta(CONTIG, SLICE_PATH, BED_PATH):
               
     # We need to strip the "chr" from the record names, and unzip for vg.
     os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
-
-    # now get a FASTA file for just the contig
-    print "bedtools getfasta -fi {} -bed {} -fo {}".format(OUTPUT_FILE, BED_PATH, SLICE_PATH)
-    os.system("bedtools getfasta -fi {} -bed {} -fo {}".format(OUTPUT_FILE, BED_PATH, SLICE_PATH))
     
 def main(args):
     
@@ -156,10 +141,8 @@ def main(args):
     bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start, ref_end))
 
     # Download 1000 Genomes data and slice region out
-    fa_path = os.path.join(options.region, options.region + ".fa")
-    vcf_path = os.path.join(options.region, options.region + ".vcf")
-    get_GRCh37_fasta(contig, fa_path, bed_path)
-    get_1000g_vcf(contig, vcf_path, bed_path)
+    get_GRCh37_fasta(contig)
+    get_1000g_vcf(contig)
                     
 if __name__ == "__main__" :
     sys.exit(main(sys.argv))
