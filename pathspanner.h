@@ -35,7 +35,6 @@ public:
 protected:
 
    const VGLight* _vg;
-   std::set<const vg::Edge*> _covered;
    std::set<const vg::Edge*> _uncovered;
 };
 
