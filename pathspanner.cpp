@@ -71,7 +71,7 @@ void PathSpanner::init(const VGLight* vg)
     _vg->getOutEdges(*i, edges);
     for (vector<const Edge*>::iterator j = edges.begin(); j != edges.end(); ++j)
     {
-      if (covered.find(*j) != covered.end())
+      if (covered.find(*j) == covered.end())
       {
         _uncovered.insert(*j);
       }

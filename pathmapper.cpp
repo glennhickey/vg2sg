@@ -329,15 +329,7 @@ string PathMapper::makeSeqName(sg_int_t pathID, sg_int_t pathPos)
 
 string PathMapper::getSpanningPathName() const
 {
-  int count = 1;
-  string name = "span_0";
-  while (std::find(_pathNames.begin(), _pathNames.end(), name) !=
-         _pathNames.end())
-  {
-    stringstream ss;
-    ss << "span_" << count;
-    name = ss.str();
-    ++count;
-  }
-  return name;
+  stringstream ss;
+  ss << "___span_" << _spanningPaths.size();
+  return ss.str();
 }
