@@ -21,87 +21,91 @@ from fetchRegion import get_region_info, get_ucsc_name
 
 
 def parse_args(args):
-    """
-    Takes in the command-line arguments list (args), and returns a nice argparse
-    result with fields for all the options.
-    
-    Borrows heavily from the argparse documentation examples:
-    <http://docs.python.org/library/argparse.html>
-    """
-    
-    # Construct the parser (which is stored in parser)
-    # Module docstring lives in __doc__
-    # See http://python-forum.com/pythonforum/viewtopic.php?f=3&t=36847
-    # And a formatter class so our examples in the docstring look good. Isn't it
-    # convenient how we already wrapped it to 80 characters?
-    # See http://docs.python.org/library/argparse.html#formatter-class
     parser = argparse.ArgumentParser(description=__doc__, 
         formatter_class=argparse.RawDescriptionHelpFormatter)
     
-    # General options
     parser.add_argument("region",
-        help="name of the region to download, and the output directory")
-    parser.add_argument("--assembly_url", 
-        default=("ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/"
-                 "vertebrates_mammals/Homo_sapiens/GRCh37.p13/"),
-                 
-        # default is GRC37.  This would be dir for 38:
-        #default=("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/"
-        #    "GCA_000001405.17_GRCh38.p2/"
-        #    "GCA_000001405.17_GRCh38.p2_assembly_structure"),
-
-        help="URL for the assembly, containing genomic_region_definitions.txt")
+            help="name of the region to download, and the output directory")
+    parser.add_argument("--assembly", default="GRCh38",
+                        help="Either GRCh37 or GRCh38")
     parser.add_argument("--email", default="soe@soe.ucsc.edu",
-        help="E-mail address to report to Entrez")
-
+                        help="E-mail address to report to Entrez")
+    
     # The command line arguments start with the program name, which we don't
     # want to treat as an argument for argparse. So we remove it.
     args = args[1:]
-        
-    return parser.parse_args(args)
+
+    options = parser.parse_args(args)
+    
+    # options.assembly_url = URL for the assembly, containing
+    # genomic_region_definitions.txt")
+    if options.assembly == "GRCh38":
+        options.assembly_url = ("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/"
+                "GCA_000001405.17_GRCh38.p2/"
+                "GCA_000001405.17_GRCh38.p2_assembly_structure")
+    elif options.assembly == "GRCh37":
+        options.assembly_url = ("ftp://ftp.ncbi.nlm.nih.gov/genbank/"
+                                "genomes/Eukaryotes/"
+                                "vertebrates_mammals/Homo_sapiens/GRCh37.p13/")
+    else:
+        raise "Invalid argument for --assembly option"
+    
+    return options
 
 # Function to download 1000 genomes VCFs per chromosome
-def get_1000g_vcf(CONTIG):
+def get_1000g_vcf(CONTIG, ASSEMBLY):
 
-    if not os.path.exists("vcf"):
-        os.makedirs("vcf")
-        
+    if not os.path.exists("vcf_{}".format(ASSEMBLY)):
+        os.makedirs("vcf_{}".format(ASSEMBLY))
+
     # What's the 1000g base url?
     BASE_URL="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502"
         
-    # Actually we will always use this one combined no-samples VCF.
-    # Trying to use the with-samples chr1 could use hundreds of gigabytes, because vg loads the whole vcf first.
-    VCF_URL="{}/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.vcf.gz".format(BASE_URL)
-    
+    if ASSEMBLY == "GRCh37":
+        if CONTIG == "Y":
+            # chrY has a special filename
+            VCF_URL=("{}/ALL.chr{}.phase3_integrated_v1a.20130502."
+                "genotypes.vcf.gz").format(BASE_URL, CONTIG)
+        else:
+            VCF_URL=("{}/ALL.chr{}.phase3_shapeit2_mvncall_integrated_v5a."
+                     "20130502.genotypes.vcf.gz").format(BASE_URL, CONTIG)
+
+    else:
+        assert ASSEMBLY == "GRCh38"
+        assert CONTIG != "X" and CONTIG != "Y"
+        BASE_URL += "/supporting/GRCh38_positions"
+        VCF_URL = ("{}/ALL.chr{}.phase3_shapeit2_mvncall_integrated_v3plus"
+                   "_nounphased.rsID.genotypes.GRCh38_dbSNP_no_SVs.vcf.gz"
+                   ).format(BASE_URL, CONTIG)
+        
     print "Retrieving {}".format(VCF_URL)
-    
-    # Where do we save it?
-    OUTPUT_FILE="vcf/{}.vcf.gz".format(CONTIG)
-    
+        
     # We download once and make links
-    DOWNLOAD_FILE="vcf/all.vcf.gz"
-    VCF_FILE="vcf/all.vcf"
+    DOWNLOAD_FILE="vcf_{}/{}.vcf.gz".format(ASSEMBLY, CONTIG)
     
     # Download the VCF. If any is already downloaded, resume.
     os.system("curl -C - -o {} {}".format(DOWNLOAD_FILE, VCF_URL))
     # Get the index too
     os.system("curl -C - -o {}.tbi {}.tbi".format(DOWNLOAD_FILE, VCF_URL))
-    
-    # Make hard links
-    os.system("ln {} {}".format(DOWNLOAD_FILE, OUTPUT_FILE))
-    os.system("ln {}.tbi {}.tbi".format(DOWNLOAD_FILE, OUTPUT_FILE))
 
-# Function to download GRCh37 reference FASTAs per chromosome
-def get_GRCh37_fasta(CONTIG):
+# Function to download reference FASTAs per chromosome
+def get_fasta(CONTIG, ASSEMBLY):
 
-    if not os.path.exists("fa"):
-        os.makedirs("fa")
+    if not os.path.exists("fa_{}".format(ASSEMBLY)):
+        os.makedirs("fa_{}".format(ASSEMBLY))
 
+    if ASSEMBLY == "GRCh38":
+        NAME = "hg38"
+    else:
+        assert ASSEMBLY == "GRCh37"
+        NAME = "hg19"
+        
     # This is the URL to get it from
-    FASTA_URL="http://hgdownload.cse.ucsc.edu/goldenPath/hg19/chromosomes/chr{}.fa.gz".format(CONTIG)
+    FASTA_URL=("http://hgdownload.cse.ucsc.edu/goldenPath/{}/"
+               "chromosomes/chr{}.fa.gz").format(NAME, CONTIG)
     
     # And the place to put it
-    OUTPUT_FILE="fa/{}.fa".format(CONTIG)
+    OUTPUT_FILE="fa_{}/{}.fa".format(CONTIG, ASSEMBLY)
     OUTPUT_FILE_ZIPPED="{}.gz".format(OUTPUT_FILE)
     
     print "Retrieving {}".format(FASTA_URL)
@@ -111,7 +115,8 @@ def get_GRCh37_fasta(CONTIG):
     os.system("curl -C - -0 -o {} {}".format(OUTPUT_FILE_ZIPPED, FASTA_URL))
               
     # We need to strip the "chr" from the record names, and unzip for vg.
-    os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
+    os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(
+        OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
     
 def main(args):
     
@@ -141,8 +146,8 @@ def main(args):
     bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start, ref_end))
 
     # Download 1000 Genomes data and slice region out
-    get_GRCh37_fasta(contig)
-    get_1000g_vcf(contig)
+    get_fasta(contig, options.assembly)
+    get_1000g_vcf(contig, options.assembly)
                     
 if __name__ == "__main__" :
     sys.exit(main(sys.argv))
