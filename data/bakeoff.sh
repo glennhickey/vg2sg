@@ -56,7 +56,7 @@ for REGION in MHC SMA LRC_KIR
 do
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
 	 then
-		  ./fetch1kgpRegion.py ${REGION}
+		  ./fetch1kgpRegion.py ${REGION} --assembly ${ASSEMBLY}
 		  FA_FILE=`get_region_fa ${REGION}`
 		  VCF_FILE=`get_region_vcf ${REGION}`
 		  COORDS=`get_region_coords ${REGION}`
