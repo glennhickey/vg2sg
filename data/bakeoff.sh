@@ -68,7 +68,7 @@ for REGION in MHC SMA LRC_KIR
 do
 	 if [ ! -e "${REGION}_${ASSEMBLY}/database.sql" ]
 	 then
-		  ../vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
+		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
 	 fi
 done
 
