@@ -2,7 +2,21 @@
 
 #set -e
 
-VCF="vcf/all.vcf.gz"
+ASSEMBLY="GRCh38"
+
+#get the vcf file associated with a region
+function get_region_vcf {
+
+	 REGION=$1
+
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 # get contig
+	 CONTIG=`cat ${BED} | awk '{print $1}'`
+
+	 echo "vcf_${ASSEMBLY}/${CONTIG}.vcf.gz"
+}
 
 # get the fasta file associated with a region
 function get_region_fa {
@@ -10,12 +24,12 @@ function get_region_fa {
 	 REGION=$1
 
 	 # get the bed path
-	 BED=${REGION}/${REGION}.bed
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
 
 	 # get contig
 	 CONTIG=`cat ${BED} | awk '{print $1}'`
 
-	 echo "fa/${CONTIG}.fa"
+	 echo "fa_${ASSEMBLY}/${CONTIG}.fa"
 }
 
 # get the vcf -R coordinates for a region
@@ -24,7 +38,7 @@ function get_region_coords {
 	 REGION=$1
 
 	 # get the bed path
-	 BED=${REGION}/${REGION}.bed
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
 
 	 # get contig
 	 CONTIG=`cat ${BED} | awk '{print $1}'`
@@ -38,22 +52,23 @@ function get_region_coords {
 	 echo "${CONTIG}:${START}-${END}"
 }
 
-for REGION in MHC SMA
+for REGION in MHC SMA LRC_KIR
 do
-	 if [ ! -e "${REGION}/${REGION}.vg" ]
+	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
 	 then
 		  ./fetch1kgpRegion.py ${REGION}
 		  FA_FILE=`get_region_fa ${REGION}`
+		  VCF_FILE=`get_region_vcf ${REGION}`
 		  COORDS=`get_region_coords ${REGION}`
-		  vg construct -r ${FA_FILE} -R ${COORDS} -v ${VCF} -p > ${REGION}/${REGION}.vg
+		  vg construct -r ${FA_FILE} -R ${COORDS} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
 	 fi
 done
 
-for REGION in MHC SMA
+for REGION in MHC SMA LRC_KIR
 do
-	 if [ ! -e "${REGION}/database.sql" ]
+	 if [ ! -e "${REGION}_${ASSEMBLY}/database.sql" ]
 	 then
-		  ../vg2sg ${REGION}/${REGION}.vg ${REGION}/database.fa ${REGION}/database.sql -s
+		  ../vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
 	 fi
 done
 

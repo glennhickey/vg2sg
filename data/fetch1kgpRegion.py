@@ -105,7 +105,7 @@ def get_fasta(CONTIG, ASSEMBLY):
                "chromosomes/chr{}.fa.gz").format(NAME, CONTIG)
     
     # And the place to put it
-    OUTPUT_FILE="fa_{}/{}.fa".format(CONTIG, ASSEMBLY)
+    OUTPUT_FILE="fa_{}/{}.fa".format(ASSEMBLY, CONTIG)
     OUTPUT_FILE_ZIPPED="{}.gz".format(OUTPUT_FILE)
     
     print "Retrieving {}".format(FASTA_URL)
@@ -137,11 +137,12 @@ def main(args):
     contig = ref_chr.replace("chr", "")
         
     # Make our output directory
-    if not os.path.exists(options.region):
-        os.makedirs(options.region)
+    reg_dir = "{}_{}".format(options.region, options.assembly)
+    if not os.path.exists(reg_dir):
+        os.makedirs(reg_dir)
 
     # Make our BED region
-    bed_path = os.path.join(options.region, options.region + ".bed")
+    bed_path = os.path.join(reg_dir, options.region + ".bed")
     bed_file = open(bed_path, "w")
     bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start, ref_end))
 
