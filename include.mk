@@ -41,7 +41,7 @@ cflags_ultraDbg = -Wall -Werror --pedantic -g -fno-inline
 cflags_prof = -Wall -Werror --pedantic -pg -O3 -g
 
 #for cpp code: don't use pedantic, or Werror
-cppflags = ${cppflags_dbg} 
+cppflags = ${cppflags_opt} 
 
 #Flags to use
 cflags = ${cflags_dbg} 

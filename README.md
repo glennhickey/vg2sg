@@ -3,6 +3,10 @@ Prototype code for converting [VG](https://github.com/ekg/vg) to [Side Graph SQL
 
 (c) 2015 Glenn Hickey. See [LICENSE](https://github.com/glennhickey/hal2sg/blob/development/LICENSE) for details.
 
+See also:
+* [sg2vg](https://github.com/glennhickey/sg2vg): Convert [Global Alliance (Side Graph) Server](https://github.com/ga4gh/schemas/wiki/Human-Genome-Variation-Reference-(HGVR)-Pilot-Project#graph-format) to [VG](https://github.com/ekg/vg)
+* [hal2sg](https://github.com/glennhickey/hal2sg): Convert [HAL](https://github.com/glennhickey/hal) (output by [Cactus](https://github.com/glennhickey/progressiveCactus) and[CAMEL](https://github.com/adamnovak/sequence-graphs)) to [Side Graph SQL](https://github.com/ga4gh/schemas/wiki/Human-Genome-Variation-Reference-(HGVR)-Pilot-Project#graph-format)
+
 ## Algorithm
 
 Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.  Option to generate paths covering all edges in VG input not already in a path to ensure all nodes and edges get converted. 
