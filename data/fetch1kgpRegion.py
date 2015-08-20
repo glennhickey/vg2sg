@@ -117,7 +117,25 @@ def get_fasta(CONTIG, ASSEMBLY):
     # We need to strip the "chr" from the record names, and unzip for vg.
     os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(
         OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
-    
+
+# return hardcoded brca coordinates (get_region_info() doesn't know brca)
+def get_brca_info(region, assembly):
+    # brca1 http://www.ncbi.nlm.nih.gov/gene/672
+    # brca2 http://www.ncbi.nlm.nih.gov/gene/675
+    if assembly == "GRCh38":
+        if region == "BRCA1":
+            return "17", 43044295, 43125483
+        elif region == "BRCA2":
+            return "13", 32314862, 32399850
+
+    elif assembly == "GRCh37":
+        if region == "BRCA1":
+            return "17", 41196312, 41277500
+        elif region == "BRCA2":
+            return "13", 32889617, 32973809
+
+    assert False
+
 def main(args):
     
     options = parse_args(args) # This holds the nicely-parsed options object
@@ -127,8 +145,11 @@ def main(args):
 
     # Go get the region of the reference we're talking about. Starts and ends
     # are 1-based.
-    ref_acc, ref_start, ref_end = get_region_info(options.region,
-        options.assembly_url)
+    if options.region == "BRCA1" or options.region == "BRCA2":
+        ref_acc, ref_start, ref_end = get_brca_info(options.region,                                                    options.assembly)
+    else:
+        ref_acc, ref_start, ref_end = get_region_info(options.region,
+            options.assembly_url)
 
     # get the ucsc chromosome name
     ref_chr = get_ucsc_name(ref_acc)
