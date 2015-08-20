@@ -124,15 +124,15 @@ def get_brca_info(region, assembly):
     # brca2 http://www.ncbi.nlm.nih.gov/gene/675
     if assembly == "GRCh38":
         if region == "BRCA1":
-            return "17", 43044295, 43125483
+            return "CM000679.2", 43044295, 43125483
         elif region == "BRCA2":
-            return "13", 32314862, 32399850
+            return "CM000675.2", 32314862, 32399850
 
     elif assembly == "GRCh37":
         if region == "BRCA1":
-            return "17", 41196312, 41277500
+            return "CM000679.1", 41196312, 41277500
         elif region == "BRCA2":
-            return "13", 32889617, 32973809
+            return "CM000675.1", 32889617, 32973809
 
     assert False
 

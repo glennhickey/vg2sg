@@ -52,7 +52,7 @@ function get_region_coords {
 	 echo "${CONTIG}:${START}-${END}"
 }
 
-for REGION in MHC SMA LRC_KIR
+for REGION in BRCA1 BRCA2 MHC SMA LRC_KIR
 do
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
 	 then
@@ -64,7 +64,7 @@ do
 	 fi
 done
 
-for REGION in MHC SMA LRC_KIR
+for REGION in BRCA1 BRCA2 MHC SMA LRC_KIR
 do
 	 if [ ! -e "${REGION}_${ASSEMBLY}/database.sql" ]
 	 then
