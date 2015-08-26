@@ -22,8 +22,6 @@ This is organized as a stand-alone exectuable (ie reads VG protbuf directly) mos
 
 **Cloning:** Don't forget to clone submodules:
 
-     git clone git@github.com:glennhickey/vg2sg.git --recursive
-or
      git clone https://github.com/glennhickey/vg2sg.git --recursive
 
 **Note** Start by verifying that the unit tests all pass:
