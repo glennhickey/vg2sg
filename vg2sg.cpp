@@ -10,6 +10,8 @@
 #include <cassert>
 #include <fstream>
 #include <getopt.h>
+#include <sstream>
+#include <stdexcept>
 
 #include "pathmapper.h"
 #include "vgsgsql.h"
@@ -30,6 +32,13 @@ void help(char** argv)
        << "                       to make sure entire graph gets converted.\n"
        << endl;
 }
+
+/** Check if a path has edits.  Spit warning to stderr and return false
+ *  if it does */
+static bool checkPath(const VGLight& vglight,
+                      const std::string& name,
+                      const VGLight::MappingList& mappings,
+                      bool span);
 
 int main(int argc, char** argv)
 {
@@ -121,14 +130,21 @@ int main(int argc, char** argv)
   PathMapper pm;
   pm.init(&vglight);
   cout << "Adding (primary) VG path: " << primaryPathName << endl;
-  pm.addPath(primaryPathName, vglight.getPath(primaryPathName));
+  if (checkPath(vglight, primaryPathName,
+                vglight.getPath(primaryPathName), span))
+  {
+    pm.addPath(primaryPathName, vglight.getPath(primaryPathName));
+  }
   for (VGLight::PathMap::const_iterator i = paths.begin(); i != paths.end();
        ++i)
   {
     if (i->first != primaryPathName)
     {
       cout << "Adding VG path: " << i->first << endl;
-      pm.addPath(i->first, i->second);
+      if (checkPath(vglight, i->first, i->second, span))
+      {
+        pm.addPath(i->first, i->second);
+      }
     }
   }
   if (span == true)
@@ -145,4 +161,38 @@ int main(int argc, char** argv)
   //cout << "side graph = " << *pm.getSideGraph() << endl;
   
   
+}
+
+/** Check if a path has edits.  Spit warning to stderr and return false
+ *  if it does */
+bool checkPath(const VGLight& vglight,
+               const string& name,
+               const VGLight::MappingList& mappings,
+               bool span)
+{
+  try
+  {
+    // this is rather wasteful, but does the job.
+    // can make smarter check function if performance comes up
+    // as issue...
+    string buffer;
+    vglight.getPathDNA(mappings, buffer);
+  }
+  catch(runtime_error e)
+  {
+    if (span == true)
+    {
+      cerr << "Warning: Skipping path " << name << " because: "
+           << e.what() << endl;
+    }
+    else
+    {
+      stringstream msg;
+      msg << e.what() << " -- NOTE: This error can be turned into a "
+          << "warning by using the --span option.";
+      throw runtime_error(msg.str());
+    }
+    return false;
+  }
+  return true;
 }

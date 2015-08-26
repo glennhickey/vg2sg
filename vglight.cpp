@@ -187,7 +187,7 @@ int64_t VGLight::getSegmentLength(const Mapping& mapping) const
       if (edit.from_length() != edit.to_length())
       {
         stringstream msg;
-        msg << "Nontrivial edit found: : to_length != from_length";
+        msg << "Nontrivial edit found: to_length != from_length";
         throw runtime_error(msg.str());
       }
       else
