@@ -5,21 +5,8 @@ HOSTNAME = $(shell hostname)
 MACH = $(shell uname -m)
 SYS =  $(shell uname -s)
 
-#C compiler
-ifeq (${SYS},FreeBSD)
-    # default FreeBSD gcc (4.2.1) has warning bug
-    #cxx = gcc46 -std=c99 -Wno-unused-but-set-variable
-    cxx = gcc34 -std=c99 -Wno-unused-but-set-variable
-    cpp = g++
-else ifeq ($(SYS),Darwin) #This is to deal with the Mavericks replacing gcc with clang fully
-	cxx = clang -std=c99 
-	cpp = clang++ 
-else
-    cxx = gcc -std=c99
-    cpp = g++ 
-endif
-
-# -Wno-unused-result
+cxx = gcc -std=c99
+cpp = g++ 
 
 # Compiler flags.
 # DO NOT put static library -l options here. Those must be specified *after*
