@@ -12,7 +12,7 @@ See also:
 Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.  Option to generate paths covering all edges in VG input not already in a path to ensure all nodes and edges get converted. 
 
 **Constraints**
-1. Cigar edits in paths are not supported.  Any non-trivial (snp/indel in cigar) edits will result in an error. 
+1. Edits in paths are not supported.  Any non-trivial (snp/indel) edits will result in an error. 
 
 ## Important
 
