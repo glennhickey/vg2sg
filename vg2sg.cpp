@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 
   string primaryPathName;
   bool span = false;
-  optind = 4;
+  optind = 1;
   while (true)
   {
     static struct option long_options[] =
@@ -84,9 +84,9 @@ int main(int argc, char** argv)
     }
   }
   
-  string vgPath = argv[1];
-  string outFaPath = argv[2];
-  string outSQLPath = argv[3];
+  string vgPath = argv[optind++];
+  string outFaPath = argv[optind++];
+  string outSQLPath = argv[optind];
 
   ifstream vgStream(vgPath.c_str());
   if (!vgStream)
