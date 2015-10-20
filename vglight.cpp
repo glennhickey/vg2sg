@@ -190,21 +190,14 @@ int64_t VGLight::getSegmentLength(const Mapping& mapping) const
         msg << "Nontrivial edit found: to_length != from_length";
         throw runtime_error(msg.str());
       }
-      else
+      else if (edit.sequence().length() > 0)
       {
-        const string& cigar = edit.sequence();
-        stringstream expected;
-        expected << edit.from_length();
-        expected << "M";
-        if (cigar.length() > 0 && cigar != expected.str())
-        {
-          stringstream msg;
-          msg << "Nontrivial edit found: sequence=" << cigar
-              << " != expected=" << expected.str();
-          throw runtime_error(msg.str());          
-        }
-        segmentLength += mapping.edit(i).from_length();
+        stringstream msg;
+        msg << "Nontrivial edit found: sequence=" << edit.sequence()
+            << " (only empty sequence supported)";
+        throw runtime_error(msg.str());          
       }
+      segmentLength += mapping.edit(i).from_length();
     }
   }
   return segmentLength;
