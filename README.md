@@ -9,7 +9,7 @@ See also:
 
 ## Algorithm
 
-Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.  Option to generate paths covering all edges in VG input not already in a path to ensure all nodes and edges get converted. 
+Iteratatively add VG paths to side graph.  Consecutive VG nodes will be merged greedily when possible.  Only paths will be converted in this way by default.  Use the `-s` option to generate paths covering all edges in VG input not already in a path to ensure all nodes and edges get converted. 
 
 **Constraints**
 1. Edits in paths are not supported.  Any non-trivial (snp/indel) edits will result in an error. 
@@ -38,4 +38,8 @@ To run the converter:
 
 `output.sql` Output text file listing INSERT commands for Sequences, Joins and Paths (for each input sequence) in the graph.
 
-To see all the options, run with no args or use `--help`.
+**Options**
+
+    -h, --help
+    -p, --primaryPath  Primary path name
+    -s, --span         Create a path set that spans all edges to make sure entire graph gets converted.

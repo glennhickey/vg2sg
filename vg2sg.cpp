@@ -118,23 +118,31 @@ int main(int argc, char** argv)
                           string(" not found in vg"));
     }
   }
-  else
+  else if (!paths.empty())
   {
-    if (paths.empty())
-    {
-      throw runtime_error("No paths in input vg");
-    }
     primaryPathName = paths.begin()->first;
   }
-
+  
   PathMapper pm;
   pm.init(&vglight);
-  cout << "Adding (primary) VG path: " << primaryPathName << endl;
-  if (checkPath(vglight, primaryPathName,
-                vglight.getPath(primaryPathName), span))
+
+  if (!primaryPathName.empty())
   {
-    pm.addPath(primaryPathName, vglight.getPath(primaryPathName));
+    cout << "Adding (primary) VG path: " << primaryPathName << endl;
+    if (checkPath(vglight, primaryPathName,
+                  vglight.getPath(primaryPathName), span))
+    {
+      pm.addPath(primaryPathName, vglight.getPath(primaryPathName));
+    }
   }
+  else if (!span)
+  {
+    assert(paths.empty());
+    throw runtime_error("No paths to convert using default logic.  Use "
+                        "--span option to convert entire graph with inferred"
+                        " spanning paths.");
+  }
+  
   for (VGLight::PathMap::const_iterator i = paths.begin(); i != paths.end();
        ++i)
   {
