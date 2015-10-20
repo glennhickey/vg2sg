@@ -122,9 +122,44 @@ void PathMapper::addPath(const std::string& pathName,
   for (VGLight::MappingList::const_iterator i = mappings.begin();
        i != mappings.end(); ++i, ++mappingCount)
   {
-    const Position& pos = i->position();
+    Position pos = i->position();
     bool reversed = i->is_reverse();
     sg_int_t segmentLength = _vg->getSegmentLength(*i);
+
+    // we never want to only convert a partial node. this is
+    // enforced at the beginning and end of paths here:
+    // (assumption: offset always relative to forward position 0)
+    const Node* node = _vg->getNode(pos.node_id());
+    size_t nodeLen = node->sequence().length();
+    if (!reversed)
+    {
+      // clamp forward starting point to 0
+      if (i == mappings.begin() && pos.offset() > 0)
+      {
+        segmentLength += pos.offset();
+        pos.set_offset(0);
+      }
+      // clamp forward end point to len-1
+      if (i == --mappings.end() && pos.offset() + segmentLength < nodeLen)
+      {
+        segmentLength += nodeLen - (pos.offset() + segmentLength);
+      }
+    }
+    else
+    {
+      // clamp reverse starting point to len-1
+      if (i == mappings.begin() && pos.offset() < nodeLen - 1)
+      {
+        segmentLength += nodeLen - 1 - pos.offset();
+        pos.set_offset(nodeLen - 1);
+      }
+      // clamp reverse ending point to 0
+      if (i == --mappings.end() && pos.offset() - segmentLength > 0)
+      {
+        segmentLength = pos.offset();
+      }
+    }
+
     addSegment(pathID, pathPos, pos, reversed, segmentLength);
     pathPos += segmentLength;
   }
