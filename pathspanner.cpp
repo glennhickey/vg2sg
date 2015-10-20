@@ -27,7 +27,7 @@ void PathSpanner::init(const VGLight* vg)
 {
   _vg = vg;
   _uncovered.clear();
-  set<const Edge*> covered;
+  EdgeSet covered;
   
   // get edges from existing paths and mark them covered
   const VGLight::PathMap& pathMap = _vg->getPathMap();
@@ -104,7 +104,7 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
     {
       if (nextEdges[j]->from_start() == pathEdges.back()->to_end())
       {
-        set<const Edge*>::iterator setIt = _uncovered.find(nextEdges[j]);
+        EdgeSet::iterator setIt = _uncovered.find(nextEdges[j]);
         if (setIt != _uncovered.end())
         {
           pathEdges.push_back(edge);
@@ -123,7 +123,7 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
     {
       if (nextEdges[j]->to_end() == pathEdges.back()->from_start())
       {
-        set<const Edge*>::iterator setIt = _uncovered.find(nextEdges[j]);
+        EdgeSet::iterator setIt = _uncovered.find(nextEdges[j]);
         if (setIt != _uncovered.end())
         {
           pathEdges.push_front(edge);
@@ -141,7 +141,8 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
     mapping.set_is_reverse(edge->from_start());
     Position* position = mapping.mutable_position();
     position->set_node_id(edge->from());
-    position->set_offset(0);
+    int64_t nodeLen = _vg->getNode(position->node_id())->sequence().length();
+    position->set_offset(!mapping.is_reverse() ? 0 : nodeLen - 1);
     mappings.push_back(mapping);
   }
   // pop on last to node
@@ -152,8 +153,49 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
     mapping.set_is_reverse(edge->to_end());
     Position* position = mapping.mutable_position();
     position->set_node_id(edge->to());
-    position->set_offset(0);
+    int64_t nodeLen = _vg->getNode(position->node_id())->sequence().length();
+    position->set_offset(!mapping.is_reverse() ? 0 : nodeLen - 1);
     mappings.push_back(mapping);
   }
 }
 
+bool PathSpanner::EdgePtrLess::operator()(
+  const vg::Edge* e1, const vg::Edge* e2) const
+{
+  if (e1 == NULL && e2 != NULL)
+  {
+    return true;
+  }
+  if (e1 != NULL && e2 == NULL)
+  {
+    return false;
+  }
+
+  if (e1->from() < e2->from())
+  {
+    return true;
+  }
+  else if (e1->from() == e2->from())
+  {
+    if (e1->to() < e2->to())
+    {
+      return true;
+    }
+    else if (e1->to() == e2->to())
+    {
+      if (e1->from_start() < e2->from_start())
+      {
+        return true;
+      }
+      else if (e1->from_start() == e2->from_start())
+      {
+        if (e1->to_end() < e2->to_end())
+        {
+          return true;
+        }
+      }
+    }
+  }
+  
+  return false;
+}

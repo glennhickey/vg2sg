@@ -134,6 +134,10 @@ int main(int argc, char** argv)
     {
       pm.addPath(primaryPathName, vglight.getPath(primaryPathName));
     }
+    else
+    {
+      vglight.removePath(primaryPathName);
+    }
   }
   else if (!span)
   {
@@ -143,9 +147,10 @@ int main(int argc, char** argv)
                         " spanning paths.");
   }
   
-  for (VGLight::PathMap::const_iterator i = paths.begin(); i != paths.end();
-       ++i)
+  for (VGLight::PathMap::const_iterator i = paths.begin(); i != paths.end();)
   {
+    VGLight::PathMap::const_iterator next = i;
+    ++next;
     if (i->first != primaryPathName)
     {
       cout << "Adding VG path: " << i->first << endl;
@@ -153,7 +158,12 @@ int main(int argc, char** argv)
       {
         pm.addPath(i->first, i->second);
       }
+      else
+      {
+        vglight.removePath(i->first);
+      }
     }
+    i = next;
   }
   if (span == true)
   {

@@ -52,6 +52,7 @@ public:
    const vg::Edge* getEdge(int64_t from_id, int64_t to_id,
                            bool from_start, bool to_end) const;
    const MappingList& getPath(const std::string& name) const;
+   void removePath(const std::string& name);
 
    /* all edges that touch node in either direction */
    void getInEdges(const vg::Node* node,
@@ -149,6 +150,12 @@ inline const VGLight::MappingList& VGLight::getPath(const std::string& name)
   const
 {
   return _paths.find(name)->second;
+}
+
+inline void VGLight::removePath(const std::string& name)
+{
+  assert(_paths.find(name) != _paths.end());
+  _paths.erase(_paths.find(name));
 }
 
 

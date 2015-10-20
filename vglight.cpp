@@ -157,6 +157,10 @@ void VGLight::getPathDNA(const MappingList& mappingList, string& outDNA) const
     const Node* node = getNode(pos.node_id());
     int64_t segmentLength = getSegmentLength(*i);
     int64_t offset = pos.offset();
+    if (reversed)
+    {
+      offset -= segmentLength - 1;
+    }
     string dna = node->sequence().substr(offset, segmentLength);
     if (reversed)
     {
@@ -174,7 +178,14 @@ int64_t VGLight::getSegmentLength(const Mapping& mapping) const
   {
     const Position& pos = mapping.position();
     const Node* node = getNode(pos.node_id());
-    segmentLength = node->sequence().length() - pos.offset();
+    if (!mapping.is_reverse())
+    {
+      segmentLength = node->sequence().length() - pos.offset();
+    }
+    else
+    {
+      segmentLength = pos.offset() + 1;
+    }
   }
   // has edits: take total length of edits (???)
   else
@@ -183,7 +194,6 @@ int64_t VGLight::getSegmentLength(const Mapping& mapping) const
     for (int i = 0; i < numEdits; ++i)
     {
       const Edit& edit = mapping.edit(i);
-      assert(edit.from_length() > 0);
       if (edit.from_length() != edit.to_length())
       {
         stringstream msg;

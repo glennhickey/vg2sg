@@ -109,7 +109,7 @@ const string& PathMapper::getVGPathName(const SGSequence* seq) const
 
 void PathMapper::addPath(const std::string& pathName,
                          const VGLight::MappingList& mappings)
-{
+{  
   assert(_pathIDs.find(pathName) == _pathIDs.end());
 
   _pathNames.push_back(pathName);
@@ -188,7 +188,7 @@ void PathMapper::addSpanningPaths()
   {
     string pathName = getSpanningPathName();
     VGLight::MappingList mappings;
-    ps.getNextPath(mappings);
+    ps.getNextPath(mappings);    
     addPath(pathName, mappings);
     _spanningPaths.insert(pair<sg_int_t, VGLight::MappingList>(
                             _pathNames.size()-1, mappings));
@@ -244,12 +244,14 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     sg_int_t curSeqLen = _curSeq->getLength();
     assert(_curSeq->getID() < _seqStrings.size());
     const Node* node = _vg->getNode(pos.node_id());
-    string dna = node->sequence();
+    int64_t start = !reversed ? pos.offset() : pos.offset() - segLength + 1; 
+    string dna = node->sequence().substr(start, segLength);
     if (reversed == true)
     {
       VGLight::reverseComplement(dna);
     }
-    assert(pos.offset() + segLength <= dna.length());
+    assert(reversed || pos.offset() + segLength <= dna.length());
+    assert(!reversed || pos.offset() - segLength + 1 >= 0);
     // add dna string to the sequence
     _seqStrings[_curSeq->getID()].append(dna);
     _curSeq->setLength(_curSeq->getLength() + segLength);
@@ -257,10 +259,10 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
 
     // update lookup
     SGPosition toPos(_curSeq->getID(), curSeqLen);
-    // todo: reverse mapping shift
-    // todo: offset shift
+    SGPosition fromPos(sgPos.getSeqID(), !reversed ? sgPos.getPos() :
+                       sgPos.getPos() - segLength + 1);
     
-    _lookup->addInterval(sgPos, toPos, segLength, reversed);
+    _lookup->addInterval(fromPos, toPos, segLength, reversed);
   }
   else
   {
@@ -277,7 +279,7 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
 void PathMapper::addPathJoins(const string& name,
                               const VGLight::MappingList& mappings)
 {
-  _sgPaths.resize(_sgPaths.size() + 1);
+  _sgPaths.push_back(vector<SGSegment>());
   vector<SGSegment>& sgPath = _sgPaths.back();
   int mappingCount = 0;
   for (VGLight::MappingList::const_iterator i = mappings.begin();
@@ -289,22 +291,48 @@ void PathMapper::addPathJoins(const string& name,
     int64_t segmentLength = _vg->getSegmentLength(*i);
     int64_t offset = pos.offset();
     assert(offset >= 0);
-    if (offset > 0 && mappingCount != 0)
+
+    // do some sanity checks on startpoints
+    if (i != mappings.begin() &&
+        ((!reversed && offset > 0) ||
+         (reversed && offset != node->sequence().length() - 1)))
     {
       stringstream ss;
-      ss << "Offset > 0 found on " << mappingCount << "th mappping of "
-         << "path " << name << ".  Offsets only permitted on 0th mapping";
+      ss << "Path " << name << " Mapping " << mappingCount << ": ";
+      if (reversed)
+      {
+        ss << "(Reverse) ";
+      }
+      ss << "Mapping with offset " << offset
+         << " does not start at node " << node->id() << " endpoint.";
       throw runtime_error(ss.str());
     }
+    
+    // and endpoints
+    if (i != --mappings.end() &&
+        ((!reversed && offset + segmentLength != node->sequence().length())
+         || (reversed && offset - segmentLength + 1 != 0)))
+    {
+      stringstream ss;
+      ss << "Path " << name << " Mapping " << mappingCount << ": ";
+      if (reversed)
+      {
+        ss << "(Reverse) ";
+      }
+      ss << "Mapping with offset " << offset << " and length " << segmentLength
+         << " does not end at endpoint of node " << node->id() << " with length "
+         << node->sequence().length();
+      throw runtime_error(ss.str());
+      
+    }
+    
     sg_int_t nodeID = _nodeIDMap.find(node->id())->second;
     SGPosition start(nodeID, offset);
-    SGPosition end(nodeID, offset + segmentLength - 1);
-    if (reversed)
-    {
-      swap(start, end);
-    }
+    int64_t delta = !reversed ? segmentLength - 1 : -segmentLength + 1;
+    SGPosition end(nodeID, offset + delta);
     vector<SGSegment> nextPath;
     _lookup->getPath(start, end, nextPath);
+
     if (reversed && start == end)
     {
       // weird. doesn't seem to be issue in hal2sg. should figure out why,

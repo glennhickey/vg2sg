@@ -34,8 +34,15 @@ public:
    
 protected:
 
+   // replace ptr comp to make determinstic and help debug
+   struct EdgePtrLess {
+      bool operator()(const vg::Edge* e1, const vg::Edge* e2) const;
+   };
+   typedef std::set<const vg::Edge*, EdgePtrLess> EdgeSet;
+   
    const VGLight* _vg;
-   std::set<const vg::Edge*> _uncovered;
+   EdgeSet _uncovered;
 };
+
 
 #endif

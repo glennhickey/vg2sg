@@ -73,11 +73,11 @@ static Path* makePath(Graph& graph, const string& name,
     Mapping* mapping = path->add_mapping();
     Position* position = mapping->mutable_position();
     position->set_node_id(nodes[i]->id());
-    position->set_offset(0);
     if (flips[i] == true)
     {
       forward = !forward;
     }
+    position->set_offset(forward ? 0 : nodes[i]->sequence().length() - 1);
     mapping->set_is_reverse(!forward);
     if (i < nodes.size() - 1)
     {
@@ -88,9 +88,6 @@ static Path* makePath(Graph& graph, const string& name,
     Edit* edit = mapping->add_edit();
     edit->set_from_length(nodes[i]->sequence().length());
     edit->set_to_length(nodes[i]->sequence().length());
-    stringstream ss;
-    ss << edit->to_length() << "M";
-    edit->set_sequence(ss.str());
   }
   return path;
 }
