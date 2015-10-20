@@ -4,7 +4,7 @@ include ${rootPath}/include.mk
 all : vg2sg
 
 clean : 
-	rm -f  vg2sg vglight.o pathspanner.o pathmapper.o vgsgsql.o
+	rm -f  vg2sg vglight.o pathspanner.o pathmapper.o vgsgsql.o vg2sg.o
 	cd sgExport && make clean
 	cd tests && make clean
 	rm -f vg.pb.h vg.pb.cc vg.pb.o
