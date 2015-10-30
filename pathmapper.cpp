@@ -298,7 +298,7 @@ void PathMapper::addPathJoins(const string& name,
          (reversed && offset != node->sequence().length() - 1)))
     {
       stringstream ss;
-      ss << "Path " << name << " Mapping " << mappingCount << ": ";
+      ss << "Path " << name << " Mapping rank " << (mappingCount + 1) << ": ";
       if (reversed)
       {
         ss << "(Reverse) ";
@@ -314,7 +314,7 @@ void PathMapper::addPathJoins(const string& name,
          || (reversed && offset - segmentLength + 1 != 0)))
     {
       stringstream ss;
-      ss << "Path " << name << " Mapping " << mappingCount << ": ";
+      ss << "Path " << name << " Mapping rank " << (mappingCount + 1) << ": ";
       if (reversed)
       {
         ss << "(Reverse) ";
