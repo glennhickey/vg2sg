@@ -112,7 +112,15 @@ void VGLight::mergeGraphs()
       // sort by rank and remove dupes
       set<Mapping, MappingRankLess> mappingSet(ret.first->second.begin(),
                                                ret.first->second.end());
-      ret.first->second = MappingList(mappingSet.begin(), mappingSet.end());
+      if (mappingSet.size() > 1 || mappingSet.begin()->rank() > 0)
+      {
+        ret.first->second = MappingList(mappingSet.begin(), mappingSet.end());
+      }
+      else
+      {
+        cerr << "Warning: rank not specified for mapping in path "
+             << path->name() << endl;
+      }
     }
   }
 }
