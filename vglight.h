@@ -37,6 +37,9 @@ public:
    struct NodePtrLess {
       bool operator()(const vg::Node* node1, const vg::Node* node2) const;
    };
+   struct MappingRankLess {
+      bool operator()(const vg::Mapping& m1, const vg::Mapping& m2) const;
+   };
    typedef std::list<vg::Mapping> MappingList;
    typedef std::set<const vg::Node*, NodePtrLess> NodeSet;
    typedef std::multimap<int64_t, const vg::Edge*> EdgeMap;
@@ -75,7 +78,7 @@ protected:
 
    /** Convert _graphs into _nodes/_edges/_paths */
    void mergeGraphs();
-       
+
    /** Graphs read direct from protobuf.  They are unmerged and we keep
     * them around just for storage */
    std::vector<vg::Graph> _graphs;
@@ -95,6 +98,13 @@ inline bool VGLight::NodePtrLess::operator()(const vg::Node* node1,
 {
   return node1->id() < node2->id();
 }
+
+inline bool VGLight::MappingRankLess::operator()(const vg::Mapping& m1,
+                                                 const vg::Mapping& m2) const
+{
+  return m1.rank() < m2.rank();
+}
+
 
 inline const VGLight::NodeSet& VGLight::getNodeSet() const
 {

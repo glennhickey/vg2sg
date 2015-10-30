@@ -109,6 +109,10 @@ void VGLight::mergeGraphs()
       {
         ret.first->second.push_back(path->mapping(k));
       }
+      // sort by rank and remove dupes
+      set<Mapping, MappingRankLess> mappingSet(ret.first->second.begin(),
+                                               ret.first->second.end());
+      ret.first->second = MappingList(mappingSet.begin(), mappingSet.end());
     }
   }
 }
