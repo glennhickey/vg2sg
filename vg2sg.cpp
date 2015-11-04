@@ -30,6 +30,8 @@ void help(char** argv)
        << "    -p, --primaryPath  Primary path name\n"
        << "    -s, --span         Create a path set that spans all edges\n"
        << "                       to make sure entire graph gets converted.\n"
+       << "    -i, --ignorePaths  Ignore paths in input VG.  Use spanning\n"
+       << "                       paths only for conversion.\n"
        << endl;
 }
 
@@ -50,6 +52,7 @@ int main(int argc, char** argv)
 
   string primaryPathName;
   bool span = false;
+  bool ignorePaths = false;
   optind = 1;
   while (true)
   {
@@ -57,10 +60,11 @@ int main(int argc, char** argv)
        {
          {"help", no_argument, 0, 'h'},
          {"primaryPath", required_argument, 0, 'p'},
-         {"span", no_argument, 0, 's'}
+         {"span", no_argument, 0, 's'},
+         {"ignorePaths", no_argument, 0, 'i'}
        };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hp:s", long_options, &option_index);
+    int c = getopt_long(argc, argv, "hp:si", long_options, &option_index);
 
     if (c == -1)
     {
@@ -79,6 +83,10 @@ int main(int argc, char** argv)
     case 's':
       span = true;
       break;
+    case 'i':
+      ignorePaths = true;
+      span = true;
+      break;      
     default:
       abort();
     }
@@ -97,6 +105,10 @@ int main(int argc, char** argv)
   VGLight vglight;
   cout << "Reading input graph from disk" << endl;
   vglight.loadGraph(vgStream);
+  if (ignorePaths)
+  {
+    vglight.deletePaths();
+  }
   cout << "Graph has " << vglight.getNodeSet().size() << " nodes, "
        << vglight.getNumEdges() << " edges and "
        << vglight.getPathMap().size() << " paths";

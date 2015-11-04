@@ -43,3 +43,4 @@ To run the converter:
     -h, --help
     -p, --primaryPath  Primary path name
     -s, --span         Create a path set that spans all edges to make sure entire graph gets converted.
+    -i, --ignorePaths  Ignore paths in input VG.  Use spanning paths only for conversion.

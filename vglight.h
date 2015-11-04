@@ -34,6 +34,10 @@ public:
     */
    void loadGraph(const vg::Graph& graph);
 
+   /** Delete paths (hack to allow option to skip corrupt paths)
+    */
+   void deletePaths();
+
    struct NodePtrLess {
       bool operator()(const vg::Node* node1, const vg::Node* node2) const;
    };

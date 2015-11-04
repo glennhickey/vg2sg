@@ -79,6 +79,11 @@ void VGLight::loadGraph(const Graph& graph)
   mergeGraphs();
 }
 
+void VGLight::deletePaths()
+{
+  _paths.clear();
+}
+
 void VGLight::mergeGraphs()
 {
   _paths.clear();
