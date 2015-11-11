@@ -11,11 +11,16 @@ function get_region_vcf {
 	 REGION=$1
 	 MERGE=$2
 
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 # get contig
+	 CONTIG=`cat ${BED} | awk '{print $1}'`
 	 if [ $MERGE != "1" ]
 	 then
-		  echo "${REGION}_${ASSEMBLY}/${REGION}.vcf.gz"
+		  echo "vcf_${ASSEMBLY}/${CONTIG}.vcf.gz"
 	 else
-		  echo "${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vcf.gz"
+		  echo "vcf_${ASSEMBLY}/${CONTIG}_merge_${WINDOW}.vcf.gz"
 	 fi
 }
 
@@ -24,7 +29,33 @@ function get_region_fa {
 
 	 REGION=$1
 
-	 echo ${REGION}_${ASSEMBLY}/${REGION}.fa
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 # get contig
+	 CONTIG=`cat ${BED} | awk '{print $1}'`
+
+	 echo "fa_${ASSEMBLY}/${CONTIG}.fa"
+}
+
+# get the vcf -R coordinates for a region
+function get_region_coords {
+
+	 REGION=$1
+
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 # get contig
+	 CONTIG=`cat ${BED} | awk '{print $1}'`
+
+	 #get coordinates (convert BED into 1-based, inclusive)
+	 START=`cat ${BED} | awk '{print $2+1}'`
+
+	 #note VCF seems to want inclusive end
+	 END=`cat ${BED} | awk '{print $3}'`
+
+	 echo "${CONTIG}:${START}-${END}"
 }
 
 for REGION in BRCA1 BRCA2 MHC SMA LRC_KIR
@@ -40,7 +71,7 @@ do
 
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
 	 then
-		  vg construct -r ${FA_FILE} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
+		  vg construct -r ${FA_FILE} -R ${COORDS} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
 	 fi
 
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg" ]
@@ -57,7 +88,7 @@ do
 		  tabix -f -p vcf ${MERGE_VCF_FILE}.gz
 
 		  # make vg with -f (keep alleles)
-		  vg construct -f -r ${FA_FILE} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg
+		  vg construct -f -r ${FA_FILE} -R ${COORDS} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg
 	 fi
 done
 

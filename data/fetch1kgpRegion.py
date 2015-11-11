@@ -88,8 +88,6 @@ def get_1000g_vcf(CONTIG, ASSEMBLY):
     # Get the index too
     os.system("curl -C - -o {}.tbi {}.tbi".format(DOWNLOAD_FILE, VCF_URL))
 
-    return DOWNLOAD_FILE
-
 # Function to download reference FASTAs per chromosome
 def get_fasta(CONTIG, ASSEMBLY):
 
@@ -120,8 +118,6 @@ def get_fasta(CONTIG, ASSEMBLY):
     os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(
         OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
 
-    return OUTPUT_FILE
-
 # return hardcoded brca coordinates (get_region_info() doesn't know brca)
 def get_brca_info(region, assembly):
     # brca1 http://www.ncbi.nlm.nih.gov/gene/672
@@ -150,8 +146,7 @@ def main(args):
     # Go get the region of the reference we're talking about. Starts and ends
     # are 1-based.
     if options.region == "BRCA1" or options.region == "BRCA2":
-        ref_acc, ref_start, ref_end = get_brca_info(options.region,
-                                                    options.assembly)
+        ref_acc, ref_start, ref_end = get_brca_info(options.region,                                                    options.assembly)
     else:
         ref_acc, ref_start, ref_end = get_region_info(options.region,
             options.assembly_url)
@@ -170,24 +165,11 @@ def main(args):
     # Make our BED region
     bed_path = os.path.join(reg_dir, options.region + ".bed")
     bed_file = open(bed_path, "w")
-    # Note: we keep BED coordinates 0-based:
-    bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start + 1, ref_end))
+    bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start, ref_end))
 
-    # Download 1000 Genomes data
-    contig_fa_path = get_fasta(contig, options.assembly)
-    contig_vcf_path = get_1000g_vcf(contig, options.assembly)
-
-    # Slice region out of fa and vcf
-    fa_path = bed_path.replace(".bed", ".fa")
-    os.system("bedtools -fi {} -bed {} -fo {}".format(contig_fa_path, bed_path,
-                                                      fa_path))
-    os.system("bcftools view {} -r {}:{}-{} -O z > {}".format(confit_vcf_path,
-                                                              contig, ref_start, ref_end,
-                                                              vcf_path))
-    os.system("tabix -f -p vcf {}".format(vcf_path))
-                                                      
-    
-    
+    # Download 1000 Genomes data and slice region out
+    get_fasta(contig, options.assembly)
+    get_1000g_vcf(contig, options.assembly)
                     
 if __name__ == "__main__" :
     sys.exit(main(sys.argv))
