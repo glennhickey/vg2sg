@@ -88,7 +88,7 @@ def get_1000g_vcf(CONTIG, ASSEMBLY):
     # Get the index too
     os.system("curl -C - -o {}.tbi {}.tbi".format(DOWNLOAD_FILE, VCF_URL))
 
-# Function to download reference FASTAs per chromosome
+ # Function to download reference FASTAs per chromosome
 def get_fasta(CONTIG, ASSEMBLY):
 
     if not os.path.exists("fa_{}".format(ASSEMBLY)):
@@ -165,7 +165,8 @@ def main(args):
     # Make our BED region
     bed_path = os.path.join(reg_dir, options.region + ".bed")
     bed_file = open(bed_path, "w")
-    bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start, ref_end))
+    # Note: we keep BED coordinates 0-based:
+    bed_file.write("{}\t{}\t{}\t\n".format(contig, ref_start - 1, ref_end))
 
     # Download 1000 Genomes data and slice region out
     get_fasta(contig, options.assembly)
