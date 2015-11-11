@@ -80,7 +80,7 @@ do
 		  if [ ! -e "${MERGE_VCF_FILE}" ]
 		  then
 				# merge up blocks of phased snps into their own haplotypes
-				gzip -d -c ${VCF_FILE} | vcfgeno2haplo -r ${FA_FILE} -w ${WINDOW} > ${MERGE_VCF_FILE}
+				gzip -d -c ${VCF_FILE} | vcfgeno2haplo -g ${COORDS} -r ${FA_FILE} -w ${WINDOW} > ${MERGE_VCF_FILE}
 		  fi
 		  
 		  # create compressed vcf
