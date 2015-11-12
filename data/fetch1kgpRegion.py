@@ -178,7 +178,8 @@ def main(args):
     contig_vcf_path = get_1000g_vcf(contig, options.assembly)
 
     # Slice region out of vcf
-    os.system("bcftools view {} -r {}:{}-{} -O z > {}".format(confit_vcf_path,
+    vcf_path = bed_path.replace(".bed", ".vcf.gz")
+    os.system("bcftools view {} -r {}:{}-{} -O z > {}".format(contig_vcf_path,
                                                               contig, ref_start, ref_end,
                                                               vcf_path))
     os.system("tabix -f -p vcf {}".format(vcf_path))

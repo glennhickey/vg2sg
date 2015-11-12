@@ -64,20 +64,20 @@ do
 
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
 	 then
-		  vg construct -r ${FA_FILE} -v ${VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
+		  vg construct -r ${FA_FILE} -v ${VCF_FILE} -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
 	 fi
 
 	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg" ]
 	 then
 		  # merge up blocks of phased snps into their own haplotypes
-		  gzip -d -c ${VCF_FILE} | vcfgeno2haplo -r ${FA_FILE} -w ${WINDOW} > ${MERGE_VCF_FILE%??}
+		  gzip -d -c ${VCF_FILE} | vcfgeno2haplo -r ${FA_FILE} -w ${WINDOW} > ${MERGE_VCF_FILE%???}
 		  
 		  # create compressed vcf
-		  bgzip -f ${MERGE_VCF_FILE%??}
+		  bgzip -f ${MERGE_VCF_FILE%???}
 		  tabix -f -p vcf ${MERGE_VCF_FILE}
 		  
 		  # make vg with -f (keep alleles)
-		  vg construct -f -r ${FA_FILE} -v ${MERGE_VCF_FILE} -p > ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg
+		  vg construct -f -r ${FA_FILE} -v ${MERGE_VCF_FILE} -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg
 	 fi
 done
 
