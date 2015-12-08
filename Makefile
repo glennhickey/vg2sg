@@ -45,5 +45,5 @@ vg2sg :  vg2sg.o vg.pb.o vglight.o pathspanner.o pathmapper.o vgsgsql.o ${basicL
 	${cpp} ${cppflags}  vg2sg.o vg.pb.o vglight.o pathspanner.o pathmapper.o vgsgsql.o  ${basicLibs} -o vg2sg 
 
 test : unitTests
-	pushd .  && cd ${sgExportPath} && make test && popd && tests/unitTests
+	cd ${sgExportPath} && make test && cd .. && tests/unitTests
 

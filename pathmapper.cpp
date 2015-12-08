@@ -328,20 +328,9 @@ void PathMapper::addPathJoins(const string& name,
     
     sg_int_t nodeID = _nodeIDMap.find(node->id())->second;
     SGPosition start(nodeID, offset);
-    int64_t delta = !reversed ? segmentLength - 1 : -segmentLength + 1;
-    SGPosition end(nodeID, offset + delta);
     vector<SGSegment> nextPath;
-    _lookup->getPath(start, end, nextPath);
+    _lookup->getPath(start, segmentLength, !reversed, nextPath);
 
-    if (reversed && start == end)
-    {
-      // weird. doesn't seem to be issue in hal2sg. should figure out why,
-      // but just hack here for now (case where 1-base path not reversed)
-      assert(nextPath.size() == 1);
-      nextPath[0] = SGSegment(SGSide(nextPath[0].getSide().getBase(),
-                                     !nextPath[0].getSide().getForward()),
-                              nextPath[0].getLength());
-    }
     mergePaths(sgPath, nextPath);
   }
 
