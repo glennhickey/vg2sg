@@ -4,20 +4,23 @@
 
 ASSEMBLY="GRCh38"
 REGIONS=( "BRCA1" "BRCA2" "SMA" "LRC_KIR" "MHC" )
-WINDOW=100
+#REGIONS=( "LRC_KIR" )
+WINDOWS=( 30 50 )
+KMER=27
+EDGE=3
 
 #get the vcf file associated with a region
 function get_region_vcf {
 
 	 REGION=$1
-	 MERGE=$2
 
-	 if [ $MERGE != "1" ]
-	 then
-		  echo "${REGION}_${ASSEMBLY}/${REGION}.vcf.gz"
-	 else
-		  echo "${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vcf.gz"
-	 fi
+	 # get the bed path
+    BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+    # get contig
+    CONTIG=`cat ${BED} | awk '{print $1}'`
+
+	 echo "vcf_${ASSEMBLY}/${CONTIG}.vcf.gz"
 }
 
 # get the fasta file associated with a region's contig
@@ -54,43 +57,87 @@ function get_region_coords {
     echo "${CONTIG}:${START}-${END}"
 }
 
+# like above but just the start
+function get_start_coord {
+
+	 REGION=$1
+
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 #get coordinates (convert BED into 1-based, inclusive)
+	 START=`cat ${BED} | awk '{print $2+1}'`
+
+	 echo "${START}"
+}
+
+# like above but just the chrom
+function get_chrom_coord {
+
+	 REGION=$1
+
+	 # get the bed path
+	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
+
+	 #get coordinates (convert BED into 1-based, inclusive)
+	 START=`cat ${BED} | awk '{print $1}'`
+
+	 echo "${START}"
+}
+
+
 for REGION in "${REGIONS[@]}"
 do
 	 ./fetch1kgpRegion.py ${REGION} --assembly ${ASSEMBLY}
 	 FA_FILE=`get_region_fa ${REGION}`
 	 VCF_FILE=`get_region_vcf ${REGION} 0`
-	 MERGE_VCF_FILE=`get_region_vcf ${REGION} 1`
 	 COORDS=`get_region_coords ${REGION}`
+	 START_COORD=`get_start_coord ${REGION}`
+	 REGION_VCF=${REGION}_${ASSEMBLY}/${REGION}.vcf
 
-	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}.vg" ]
-	 then
-		  vg construct -r ${FA_FILE} -v ${VCF_FILE} -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
-	 fi
+	 # slice the region out of the vcf
+	 bcftools view ${VCF_FILE} -r ${COORDS} > ${REGION_VCF}.raw
+	 ./vcfClean.py ${REGION_VCF}.raw ${FA_FILE} > ${REGION_VCF} 2> ${REGION}_${ASSEMBLY}/${REGION}.vcfclean.log
+	 bgzip ${REGION_VCF} -c > ${REGION_VCF}.gz
+	 tabix -f -p vcf ${REGION_VCF}.gz
 
-	 if [ ! -e "${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg" ]
-	 then
-		  # merge up blocks of phased snps into their own haplotypes
-		  gzip -d -c ${VCF_FILE} | vcfgeno2haplo -r ${FA_FILE} -w ${WINDOW} > ${MERGE_VCF_FILE%???}
-		  
-		  # create compressed vcf
-		  bgzip -f ${MERGE_VCF_FILE%???}
-		  tabix -f -p vcf ${MERGE_VCF_FILE}
-		  
-		  # make vg with -f (keep alleles)
-		  vg construct -f -r ${FA_FILE} -v ${MERGE_VCF_FILE} -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg
-	 fi
+	 # make a normal vg
+	 vg construct -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
+	 vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}.vg
+
+	 # make a flat vg for snpBridge input
+	 vg construct -f -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}_f.vg
+	 vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}_f.vg
+
+	 # make a bridged vg for each window
+	 for WINDOW in "${WINDOWS[@]}"
+	 do
+		  snpBridge ${REGION}_${ASSEMBLY}/${REGION}_f.vg ${REGION_VCF} -o ${START_COORD} -w ${WINDOW} > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg 2> ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.log
+		  vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
+		  vg compare ${REGION}_${ASSEMBLY}/${REGION}.vg  ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_comp.txt
+	 done
+
 done
 
 for REGION in "${REGIONS[@]}"
 do
-	 if [ ! -e "${REGION}_${ASSEMBLY}/database.sql" ]
-	 then
-		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
-	 fi
-	 if [ ! -e "${REGION}_${ASSEMBLY}/database_merge_${WINDOW}.sql" ]
-	 then
-		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}_merge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/database_merge_${WINDOW}.fa ${REGION}_${ASSEMBLY}/database_merge_${WINDOW}.sql -s
-	 fi
+	 CHROM=`get_chrom_coord ${REGION}`
+	 
+	 # to side graph sql (-s option because paths dont cover snps)
+	 vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
+	 for WINDOW in "${WINDOWS[@]}"
+	 do
+		  # rename the path to "ref"
+		  mv ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg
+		  ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg  ${CHROM} ref_grch37 > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
+
+		  # to side graph sql (-s option because paths dont cover snps)
+		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.fa ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.sql -s
+	 done
+
+	 # rename the path to "ref"
+	 mv ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg
+	 ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg ${CHROM} ref_grch37 > ${REGION}_${ASSEMBLY}/${REGION}.vg
 
 done
 
