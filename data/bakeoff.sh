@@ -4,7 +4,7 @@
 
 ASSEMBLY="GRCh38"
 REGIONS=( "BRCA1" "BRCA2" "SMA" "LRC_KIR" "MHC" )
-#REGIONS=( "LRC_KIR" )
+#REGIONS=( "BRCA1" )
 WINDOWS=( 30 50 )
 KMER=27
 EDGE=3
@@ -122,22 +122,23 @@ done
 for REGION in "${REGIONS[@]}"
 do
 	 CHROM=`get_chrom_coord ${REGION}`
-	 
+
+	 # rename the path to "ref"
+	 mv ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg
+	 ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg ${CHROM} ref > ${REGION}_${ASSEMBLY}/${REGION}.vg
+
 	 # to side graph sql (-s option because paths dont cover snps)
 	 vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
+
 	 for WINDOW in "${WINDOWS[@]}"
 	 do
 		  # rename the path to "ref"
 		  mv ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg
-		  ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg  ${CHROM} ref_grch37 > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
+		  ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg  ${CHROM} ref > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
 
 		  # to side graph sql (-s option because paths dont cover snps)
 		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.fa ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.sql -s
 	 done
-
-	 # rename the path to "ref"
-	 mv ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg
-	 ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg ${CHROM} ref_grch37 > ${REGION}_${ASSEMBLY}/${REGION}.vg
 
 done
 
