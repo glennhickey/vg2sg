@@ -152,6 +152,10 @@ def main(args):
     if options.region == "BRCA1" or options.region == "BRCA2":
         ref_acc, ref_start, ref_end = get_brca_info(options.region,
                                                     options.assembly)
+        # hack to be consistent with the shifted coordinates we're using for bakeoff
+        # (artifact from some other script)
+        ref_start -= 1
+        ref_end -= 1
     else:
         ref_acc, ref_start, ref_end = get_region_info(options.region,
             options.assembly_url)

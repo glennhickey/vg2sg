@@ -4,7 +4,7 @@
 
 ASSEMBLY="GRCh38"
 REGIONS=( "BRCA1" "BRCA2" "SMA" "LRC_KIR" "MHC" )
-#REGIONS=( "BRCA1" )
+#REGIONS=( "BRCA1" "BRCA2" )
 WINDOWS=( 30 50 )
 KMER=27
 EDGE=3
@@ -80,9 +80,9 @@ function get_chrom_coord {
 	 BED=${REGION}_${ASSEMBLY}/${REGION}.bed
 
 	 #get coordinates (convert BED into 1-based, inclusive)
-	 START=`cat ${BED} | awk '{print $1}'`
+	 CHROM=`cat ${BED} | awk '{print $1}'`
 
-	 echo "${START}"
+	 echo "${CHROM}"
 }
 
 
@@ -102,6 +102,7 @@ do
 	 tabix -f -p vcf ${REGION_VCF}.gz
 
 	 # make a normal vg
+	 echo "vg construct -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg"
 	 vg construct -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
 	 vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}.vg
 
