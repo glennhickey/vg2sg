@@ -123,7 +123,7 @@ void PathMapper::addPath(const std::string& pathName,
        i != mappings.end(); ++i, ++mappingCount)
   {
     Position pos = i->position();
-    bool reversed = i->is_reverse();
+    bool reversed = pos.is_reverse();
     sg_int_t segmentLength = _vg->getSegmentLength(*i);
 
     // we never want to only convert a partial node. this is
@@ -131,32 +131,37 @@ void PathMapper::addPath(const std::string& pathName,
     // (assumption: offset always relative to forward position 0)
     const Node* node = _vg->getNode(pos.node_id());
     size_t nodeLen = node->sequence().length();
+    int64_t offset = pos.offset();
+    // convert to forward-offset, as that is what vg used when logic was written
+    if (reversed) {
+      offset = nodeLen - 1 - offset;
+    }
     if (!reversed)
     {
       // clamp forward starting point to 0
-      if (i == mappings.begin() && pos.offset() > 0)
+      if (i == mappings.begin() && offset > 0)
       {
-        segmentLength += pos.offset();
+        segmentLength += offset;
         pos.set_offset(0);
       }
       // clamp forward end point to len-1
-      if (i == --mappings.end() && pos.offset() + segmentLength < nodeLen)
+      if (i == --mappings.end() && offset + segmentLength < nodeLen)
       {
-        segmentLength += nodeLen - (pos.offset() + segmentLength);
+        segmentLength += nodeLen - (offset + segmentLength);
       }
     }
     else
     {
       // clamp reverse starting point to len-1
-      if (i == mappings.begin() && pos.offset() < nodeLen - 1)
+      if (i == mappings.begin() && offset < nodeLen - 1)
       {
-        segmentLength += nodeLen - 1 - pos.offset();
-        pos.set_offset(nodeLen - 1);
+        segmentLength += nodeLen - 1 - offset;
+        pos.set_offset(0);
       }
       // clamp reverse ending point to 0
-      if (i == --mappings.end() && pos.offset() - segmentLength > 0)
+      if (i == --mappings.end() && offset - segmentLength > 0)
       {
-        segmentLength = pos.offset();
+        segmentLength = offset;
       }
     }
 
@@ -223,9 +228,16 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
                             const Position& pos, bool reversed,
                             sg_int_t segLength)
 {
+  const Node* node = _vg->getNode(pos.node_id());
+  // convert vg offset to forward relative, like it used to be
+  int64_t offset = pos.offset();  
+  if (pos.is_reverse()) {
+    offset = node->sequence().length() - 1 - offset;
+  }
+  
   // when mapping, our "from" coordinate is node-relative
   sg_int_t sgNodeID = _nodeIDMap.find(pos.node_id())->second;
-  SGPosition sgPos(sgNodeID, pos.offset());
+  SGPosition sgPos(sgNodeID, offset);
   SGSide mapResult = _lookup->mapPosition(sgPos);
   bool found = mapResult.getBase() != SideGraph::NullPos;
 
@@ -243,15 +255,14 @@ void PathMapper::addSegment(sg_int_t pathID, sg_int_t pathPos,
     // CASE 2) : Extend existing SG Sequence
     sg_int_t curSeqLen = _curSeq->getLength();
     assert(_curSeq->getID() < _seqStrings.size());
-    const Node* node = _vg->getNode(pos.node_id());
-    int64_t start = !reversed ? pos.offset() : pos.offset() - segLength + 1; 
+    int64_t start = !reversed ? offset : offset - segLength + 1; 
     string dna = node->sequence().substr(start, segLength);
     if (reversed == true)
     {
       VGLight::reverseComplement(dna);
     }
-    assert(reversed || pos.offset() + segLength <= dna.length());
-    assert(!reversed || pos.offset() - segLength + 1 >= 0);
+    assert(reversed || offset + segLength <= dna.length());
+    assert(!reversed || offset - segLength + 1 >= 0);
     // add dna string to the sequence
     _seqStrings[_curSeq->getID()].append(dna);
     _curSeq->setLength(_curSeq->getLength() + segLength);
@@ -286,10 +297,14 @@ void PathMapper::addPathJoins(const string& name,
        i != mappings.end(); ++i, ++mappingCount)
   {
     const Position& pos = i->position();
-    bool reversed = i->is_reverse();
+    bool reversed = pos.is_reverse();
     const Node* node = _vg->getNode(pos.node_id());
     int64_t segmentLength = _vg->getSegmentLength(*i);
     int64_t offset = pos.offset();
+    // convert vg offset to forward relative, like it used to be
+    if (reversed) {
+      offset = node->sequence().length() - 1 - offset;
+    }
     assert(offset >= 0);
 
     // do some sanity checks on startpoints

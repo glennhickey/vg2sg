@@ -170,12 +170,15 @@ void VGLight::getPathDNA(const MappingList& mappingList, string& outDNA) const
        i != mappingList.end(); ++i)
   {
     const Position& pos = i->position();
-    bool reversed = i->is_reverse();
+    bool reversed = i->position().is_reverse();
     const Node* node = getNode(pos.node_id());
     int64_t segmentLength = getSegmentLength(*i);
     int64_t offset = pos.offset();
     if (reversed)
     {
+      // line below is to move to newer vg where offset is relative to end when reversed:
+      offset = getNode(i->position().node_id())->sequence().length() - 1 - offset;
+      
       offset -= segmentLength - 1;
     }
     string dna = node->sequence().substr(offset, segmentLength);
@@ -195,13 +198,18 @@ int64_t VGLight::getSegmentLength(const Mapping& mapping) const
   {
     const Position& pos = mapping.position();
     const Node* node = getNode(pos.node_id());
-    if (!mapping.is_reverse())
+    int64_t offset = pos.offset();
+    if (pos.is_reverse()) {
+      // convert to old-style forward offset
+      offset = node->sequence().length() - 1 - offset;
+    }
+    if (!pos.is_reverse())
     {
-      segmentLength = node->sequence().length() - pos.offset();
+      segmentLength = node->sequence().length() - offset;
     }
     else
     {
-      segmentLength = pos.offset() + 1;
+      segmentLength = offset + 1;
     }
   }
   // has edits: take total length of edits (???)

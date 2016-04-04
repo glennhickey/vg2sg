@@ -43,8 +43,8 @@ void PathSpanner::init(const VGLight* vg)
       {
         int64_t from = prev->position().node_id();
         int64_t to = cur->position().node_id();
-        bool from_start = prev->is_reverse();
-        bool to_end = cur->is_reverse();
+        bool from_start = prev->position().is_reverse();
+        bool to_end = cur->position().is_reverse();
         const Edge* edge = _vg->getEdge(from, to, from_start, to_end);
         
         if (edge == NULL)
@@ -138,11 +138,11 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
   {
     edge = pathEdges[i];
     Mapping mapping;
-    mapping.set_is_reverse(edge->from_start());
     Position* position = mapping.mutable_position();
+    position->set_is_reverse(edge->from_start());
     position->set_node_id(edge->from());
     int64_t nodeLen = _vg->getNode(position->node_id())->sequence().length();
-    position->set_offset(!mapping.is_reverse() ? 0 : nodeLen - 1);
+    position->set_offset(!mapping.position().is_reverse() ? 0 : nodeLen - 1);
     mappings.push_back(mapping);
   }
   // pop on last to node
@@ -150,11 +150,11 @@ void PathSpanner::getNextPath(VGLight::MappingList& mappings)
   {
     edge = pathEdges.back();
     Mapping mapping;
-    mapping.set_is_reverse(edge->to_end());
     Position* position = mapping.mutable_position();
+    position->set_is_reverse(edge->to_end());
     position->set_node_id(edge->to());
     int64_t nodeLen = _vg->getNode(position->node_id())->sequence().length();
-    position->set_offset(!mapping.is_reverse() ? 0 : nodeLen - 1);
+    position->set_offset(!mapping.position().is_reverse() ? 0 : nodeLen - 1);
     mappings.push_back(mapping);
   }
 }

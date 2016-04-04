@@ -77,8 +77,8 @@ static Path* makePath(Graph& graph, const string& name,
     {
       forward = !forward;
     }
-    position->set_offset(forward ? 0 : nodes[i]->sequence().length() - 1);
-    mapping->set_is_reverse(!forward);
+    position->set_offset(0);
+    position->set_is_reverse(!forward);
     if (i < nodes.size() - 1)
     {
       bool from_start = !forward;
