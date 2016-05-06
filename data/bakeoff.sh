@@ -8,6 +8,8 @@ REGIONS=( "BRCA1" "BRCA2" "SMA" "LRC_KIR" "MHC" )
 WINDOWS=( 30 50 )
 KMER=27
 EDGE=3
+# from ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/analysis/Illumina_PlatinumGenomes_NA12877_NA12878_09162015/IlluminaPlatinumGenomes-user-guide.pdf
+PEDI_SAMPLES="NA12889 NA12890 NA12891 NA12892 NA12877 NA12878 NA12879 NA12880 NA12881 NA12882 NA12883 NA12884 NA12885 NA12886 NA12887 NA12888 NA12893"
 
 #get the vcf file associated with a region
 function get_region_vcf {
@@ -97,7 +99,10 @@ do
 
 	 # slice the region out of the vcf
 	 bcftools view ${VCF_FILE} -r ${COORDS} > ${REGION_VCF}.raw
-	 ./vcfClean.py ${REGION_VCF}.raw ${FA_FILE} > ${REGION_VCF} 2> ${REGION}_${ASSEMBLY}/${REGION}.vcfclean.log
+	 # remove pedigree samples
+	 vcfremovesamples ${REGION_VCF}.raw ${PEDI_SAMPLES} | vcffixup - | vcffilter -f 'AC > 0' > ${REGION_VCF}.ped
+	 # fix some bugs in 1000 genomes liftover where strands get bungled
+	 ./vcfClean.py ${REGION_VCF}.ped ${FA_FILE} > ${REGION_VCF} 2> ${REGION}_${ASSEMBLY}/${REGION}.vcfclean.log
 	 bgzip ${REGION_VCF} -c > ${REGION_VCF}.gz
 	 tabix -f -p vcf ${REGION_VCF}.gz
 
