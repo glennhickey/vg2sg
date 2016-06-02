@@ -4,10 +4,11 @@
 
 ASSEMBLY="GRCh38"
 REGIONS=( "BRCA1" "BRCA2" "SMA" "LRC_KIR" "MHC" )
-#REGIONS=( "BRCA1" "BRCA2" )
+#REGIONS=( "BRCA1" )
 WINDOWS=( 30 50 )
 KMER=27
 EDGE=3
+MIN_AFS=( 000 001 010 100 )
 # from ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/analysis/Illumina_PlatinumGenomes_NA12877_NA12878_09162015/IlluminaPlatinumGenomes-user-guide.pdf
 PEDI_SAMPLES="NA12889 NA12890 NA12891 NA12892 NA12877 NA12878 NA12879 NA12880 NA12881 NA12882 NA12883 NA12884 NA12885 NA12886 NA12887 NA12888 NA12893"
 
@@ -102,49 +103,63 @@ do
 	 # remove pedigree samples
 	 vcfremovesamples ${REGION_VCF}.raw ${PEDI_SAMPLES} | vcffixup - | vcffilter -f 'AC > 0' > ${REGION_VCF}.ped
 	 # fix some bugs in 1000 genomes liftover where strands get bungled
-	 ./vcfClean.py ${REGION_VCF}.ped ${FA_FILE} > ${REGION_VCF} 2> ${REGION}_${ASSEMBLY}/${REGION}.vcfclean.log
-	 bgzip ${REGION_VCF} -c > ${REGION_VCF}.gz
-	 tabix -f -p vcf ${REGION_VCF}.gz
-
-	 # make a normal vg
-	 echo "vg construct -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg"
-	 vg construct -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}.vg
-	 vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}.vg
-
-	 # make a flat vg for snpBridge input
-	 vg construct -f -r ${FA_FILE} -v ${REGION_VCF}.gz -R ${COORDS} -p > ${REGION}_${ASSEMBLY}/${REGION}_f.vg
-	 vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}_f.vg
-
-	 # make a bridged vg for each window
-	 for WINDOW in "${WINDOWS[@]}"
+	 ./vcfClean.py ${REGION_VCF}.ped ${FA_FILE} > ${REGION_VCF}.clean 2> ${REGION}_${ASSEMBLY}/${REGION}.vcfclean.log
+	 
+	 for AF in "${MIN_AFS[@]}"
 	 do
-		  snpBridge ${REGION}_${ASSEMBLY}/${REGION}_f.vg ${REGION_VCF} -o ${START_COORD} -w ${WINDOW} > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg 2> ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.log
-		  vg index -s -k ${KMER} -e ${EDGE} ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
-		  vg compare ${REGION}_${ASSEMBLY}/${REGION}.vg  ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_comp.txt
+		  OBASE=${REGION}_${ASSEMBLY}/${REGION}_AF${AF}
+		  
+		  # filter out by minor allele frequency (AF)
+		  echo "bcftools filter -e \"AF<0.${AF}\" ${REGION_VCF}.clean > ${OBASE}.vcf"
+		  bcftools filter -e "AF<0.${AF}" ${REGION_VCF}.clean > ${OBASE}.vcf
+		  bgzip ${OBASE}.vcf -c > ${OBASE}.vcf.gz
+		  tabix -f -p vcf ${OBASE}.vcf.gz
+
+		  # make a normal vg
+		  echo "vg construct -r ${FA_FILE} -v ${OBASE}.vcf.gz -R ${COORDS} -p > ${OBASE}.vg"
+		  vg construct -r ${FA_FILE} -v ${OBASE}.vcf.gz -R ${COORDS} -p > ${OBASE}.vg
+		  echo "vg index -s -k ${KMER} -e ${EDGE} ${OBASE}.vg -d ${OBASE}.vg.index"
+		  vg index -s -k ${KMER} -e ${EDGE} ${OBASE}.vg -d ${OBASE}.vg.index
+
+		  # make a flat vg for snpBridge input
+		  vg construct -f -r ${FA_FILE} -v ${OBASE}.vcf.gz -R ${COORDS} -p > ${OBASE}_f.vg
+		  vg index -s -k ${KMER} -e ${EDGE} ${OBASE}_f.vg -d ${OBASE}_f.vg.index
+
+		  # make a bridged vg for each window
+		  for WINDOW in "${WINDOWS[@]}"
+		  do
+				snpBridge ${OBASE}_f.vg ${OBASE}.vcf -o ${START_COORD} -w ${WINDOW} > ${OBASE}_bridge_${WINDOW}.vg 2> ${OBASE}_bridge_${WINDOW}.log
+				vg index -s -k ${KMER} -e ${EDGE} ${OBASE}_bridge_${WINDOW}.vg -d ${OBASE}_bridge_${WINDOW}.vg.index
+				vg compare ${OBASE}.vg.index  ${OBASE}_bridge_${WINDOW}.vg.index -t 2 > ${OBASE}_bridge_${WINDOW}_comp.txt
+		  done
+
 	 done
-
 done
-
 for REGION in "${REGIONS[@]}"
 do
 	 CHROM=`get_chrom_coord ${REGION}`
 
-	 # rename the path to "ref"
-	 mv ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg
-	 ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_chrom_name.vg ${CHROM} ref > ${REGION}_${ASSEMBLY}/${REGION}.vg
-
-	 # to side graph sql (-s option because paths dont cover snps)
-	 vg2sg ${REGION}_${ASSEMBLY}/${REGION}.vg ${REGION}_${ASSEMBLY}/database.fa ${REGION}_${ASSEMBLY}/database.sql -s
-
-	 for WINDOW in "${WINDOWS[@]}"
+	 for AF in "${MIN_AFS[@]}"
 	 do
+		  OBASE=${REGION}_${ASSEMBLY}/${REGION}_AF${AF}
+
 		  # rename the path to "ref"
-		  mv ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg
-		  ./vgRenamePath.sh ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}_chrom_name.vg  ${CHROM} ref > ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg
+		  mv ${OBASE}.vg ${OBASE}_chrom_name.vg
+		  ./vgRenamePath.sh ${OBASE}_chrom_name.vg ${CHROM} ref > ${OBASE}.vg
 
 		  # to side graph sql (-s option because paths dont cover snps)
-		  vg2sg ${REGION}_${ASSEMBLY}/${REGION}_bridge_${WINDOW}.vg ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.fa ${REGION}_${ASSEMBLY}/database_bridge_${WINDOW}.sql -s
-	 done
+		  vg2sg ${OBASE}.vg ${OBASE}_database.fa ${OBASE}_database.sql -s
 
+		  for WINDOW in "${WINDOWS[@]}"
+		  do
+				# rename the path to "ref"
+				mv ${OBASE}_bridge_${WINDOW}.vg ${OBASE}_bridge_${WINDOW}_chrom_name.vg
+				./vgRenamePath.sh ${OBASE}_bridge_${WINDOW}_chrom_name.vg  ${CHROM} ref > ${OBASE}_bridge_${WINDOW}.vg
+
+				# to side graph sql (-s option because paths dont cover snps)
+				echo "vg2sg ${OBASE}_bridge_${WINDOW}.vg ${OBASE}_database_bridge_${WINDOW}.fa ${OBASE}_database_bridge_${WINDOW}.sql -s"
+				vg2sg ${OBASE}_bridge_${WINDOW}.vg ${OBASE}_database_bridge_${WINDOW}.fa ${OBASE}_database_bridge_${WINDOW}.sql -s
+		  done
+	 done
 done
 
