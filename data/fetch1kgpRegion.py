@@ -116,8 +116,8 @@ def get_fasta(CONTIG, ASSEMBLY):
     # Resume doesn't work properly for this server in http 1.1 if the file is done already.
     os.system("curl -C - -0 -o {} {}".format(OUTPUT_FILE_ZIPPED, FASTA_URL))
               
-    # We need to strip the "chr" from the record names, and unzip for vg.
-    os.system("cat {} | zcat | sed \"s/chr{}/{}/\" > {}".format(
+    # We need to strip the "chr" from the record names, converto to upper case, and unzip for vg.
+    os.system("cat {} | zcat | sed \"s/chr{}/{}/\" | sed \"s/a/A/g;s/c/C/g;s/g/G/g;s/t/T/g;s/n/N/g\" > {}".format(
         OUTPUT_FILE_ZIPPED, CONTIG, CONTIG, OUTPUT_FILE))
 
     return OUTPUT_FILE
